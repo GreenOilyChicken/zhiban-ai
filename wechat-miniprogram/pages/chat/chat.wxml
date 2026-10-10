@@ -1,0 +1,42 @@
+<view class="container {{elderlyMode ? 'elderly-mode' : ''}}">
+  <!-- 消息列表 -->
+  <scroll-view scroll-y class="msg-list" scroll-into-view="msg-{{messages.length}}">
+    <block wx:for="{{messages}}" wx:key="index">
+      <view id="msg-{{index + 1}}" class="msg-row {{item.role === 'user' ? 'msg-user' : 'msg-bot'}}">
+        <view class="msg-avatar">{{item.role === 'user' ? '👤' : '🤖'}}</view>
+        <view class="msg-bubble {{item.role === 'user' ? 'user' : 'bot'}}">
+          <text>{{item.content}}</text>
+        </view>
+      </view>
+    </block>
+    
+    <!-- 加载中 -->
+    <view wx:if="{{loading}}" class="msg-row msg-bot">
+      <view class="msg-avatar">🤖</view>
+      <view class="msg-bubble bot loading-bubble">
+        <text>正在思考中...</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部输入区 -->
+  <view class="input-area">
+    <view class="input-left">
+      <input
+        class="input-box"
+        placeholder="请输入您的问题"
+        value="{{inputText}}"
+        bindinput="onInput"
+        bindconfirm="onSend"
+        confirm-type="send"
+      />
+    </view>
+    <button class="btn-primary btn-send" bindtap="onSend" disabled="{{loading}}">发送</button>
+  </view>
+
+  <!-- 功能栏 -->
+  <view class="toolbar">
+    <view class="tool-btn" bindtap="onVoiceInput">🎤 语音</view>
+    <view class="tool-btn" bindtap="onClearChat">🗑 清空</view>
+  </view>
+</view>

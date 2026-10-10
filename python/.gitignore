@@ -1,0 +1,25 @@
+# 知伴AI — Python .gitignore
+.env
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+htmlcov/
+.coverage
+
+# 知识库数据
+knowledge_base/chroma_db/
+knowledge_base/data/
+
+# 输出
+output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,138 @@
+.container {
+  padding-bottom: 40rpx;
+}
+
+.search-bar {
+  display: flex;
+  padding: 20rpx;
+  background: #fff;
+}
+
+.search-input {
+  flex: 1;
+  background: #F5F5F5;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  font-size: 36rpx;
+  margin-right: 16rpx;
+}
+
+.btn-search {
+  background: #4A90D9;
+  color: #fff;
+  border-radius: 12rpx;
+  padding: 20rpx 40rpx;
+  font-size: 34rpx;
+  border: none;
+  white-space: nowrap;
+}
+
+.ai-entry {
+  display: flex;
+  align-items: center;
+  margin: 20rpx;
+}
+
+.ai-icon {
+  font-size: 56rpx;
+  margin-right: 20rpx;
+}
+
+.ai-text {
+  flex: 1;
+}
+
+.arrow {
+  font-size: 48rpx;
+  color: #ccc;
+}
+
+.section-title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  margin: 30rpx 20rpx 10rpx;
+}
+
+.route-list {
+  padding: 0 20rpx;
+}
+
+.route-item {
+  margin-bottom: 20rpx;
+}
+
+.route-name {
+  font-size: 38rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.route-spots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.spot-tag {
+  background: #E3F2FD;
+  color: #4A90D9;
+  padding: 8rpx 24rpx;
+  border-radius: 24rpx;
+  font-size: 28rpx;
+}
+
+.route-duration {
+  font-size: 30rpx;
+  color: #999;
+}
+
+.attraction-list {
+  padding: 0 20rpx;
+}
+
+.attraction-item {
+  margin-bottom: 20rpx;
+}
+
+.attraction-name {
+  font-size: 38rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.attraction-info {
+  display: flex;
+  gap: 24rpx;
+  margin-bottom: 12rpx;
+}
+
+.attraction-location,
+.attraction-price {
+  font-size: 30rpx;
+  color: #666;
+}
+
+.attraction-summary {
+  font-size: 34rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 100rpx 0;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 34rpx;
+  color: #999;
+}

@@ -1,0 +1,34 @@
+# ── 环境配置 ──────────────────
+.env
+.env.docker
+*.env.local
+
+# ── Python ───────────────────
+python/__pycache__/
+python/*.pyc
+python/venv/
+python/.venv/
+python/knowledge_base/chroma_db/
+python/output/
+python/.pytest_cache/
+python/*.egg-info/
+
+# ── Java ─────────────────────
+java-backend/target/
+java-backend/.mvn/
+java-backend/*.iml
+java-backend/.idea/
+
+# ── 前端 ─────────────────────
+vue-frontend/node_modules/
+vue-frontend/dist/
+vue-frontend/.vite/
+
+# ── IDE ──────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Docker ───────────────────
+.env.docker

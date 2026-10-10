@@ -1,0 +1,40 @@
+<view class="container {{elderlyMode ? 'elderly-mode' : ''}}">
+  <!-- 顶部问候 -->
+  <view class="greeting-card card">
+    <view class="card-title">您好，欢迎回来</view>
+    <view class="card-content">{{todayDate}}</view>
+    <view class="card-content" style="margin-top: 16rpx; color: #4A90D9;">
+      小芯AI陪伴您度过每一天
+    </view>
+  </view>
+
+  <!-- 快捷功能 -->
+  <view class="section-title">快捷功能</view>
+  <view class="quick-grid">
+    <block wx:for="{{quickActions}}" wx:key="id">
+      <view class="quick-item card" bindtap="onQuickAction" data-id="{{item.id}}">
+        <view class="quick-icon">{{item.icon === 'pill' ? '💊' : item.icon === 'policy' ? '📋' : item.icon === 'tour' ? '🏞' : '❤️'}}</view>
+        <view class="quick-title">{{item.title}}</view>
+        <view class="quick-desc">{{item.desc}}</view>
+      </view>
+    </block>
+  </view>
+
+  <!-- AI对话入口 -->
+  <view class="chat-entry card" bindtap="onChatTap">
+    <view class="chat-icon">🤖</view>
+    <view class="chat-text">
+      <view class="card-title">和小芯聊聊</view>
+      <view class="card-content">有什么问题，直接问我吧</view>
+    </view>
+    <view class="chat-arrow">›</view>
+  </view>
+
+  <!-- 紧急呼叫 -->
+  <view class="emergency-box" bindtap="onCallEmergency">
+    <view class="emergency-text">🚨 紧急呼叫 120</view>
+    <view style="font-size: 32rpx; color: #999; margin-top: 8rpx;">
+      突发不适？一键拨打急救电话
+    </view>
+  </view>
+</view>

@@ -1,0 +1,43 @@
+<view class="container {{elderlyMode ? 'elderly-mode' : ''}}">
+  <!-- Tab导航 -->
+  <view class="tab-bar">
+    <block wx:for="{{tabs}}" wx:key="id">
+      <view class="tab-item {{activeTab === item.id ? 'active' : ''}}"
+            bindtap="onTabChange" data-id="{{item.id}}">
+        {{item.name}}
+      </view>
+    </block>
+  </view>
+
+  <!-- AI问答入口 -->
+  <view class="ask-bar card" bindtap="onAskAI">
+    <view class="ask-icon">🤖</view>
+    <view class="ask-text">有什么政策问题？问AI助手</view>
+    <view class="ask-arrow">›</view>
+  </view>
+
+  <!-- 政策列表 -->
+  <view wx:if="{{policies.length > 0}}" class="policy-list">
+    <block wx:for="{{policies}}" wx:key="id">
+      <view class="policy-item card" bindtap="onPolicyTap" data-id="{{item.id}}">
+        <view class="policy-title">{{item.title}}</view>
+        <view class="policy-meta">
+          <text class="policy-author">{{item.issuingAuthority}}</text>
+          <text class="policy-date">{{item.publishDate || item.effectiveDate}}</text>
+        </view>
+        <view class="policy-summary">{{item.summary}}</view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{!loading && policies.length === 0}}" class="empty-state">
+    <view class="empty-icon">📋</view>
+    <view class="empty-text">暂无政策信息</view>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-state">
+    <text>加载中...</text>
+  </view>
+</view>

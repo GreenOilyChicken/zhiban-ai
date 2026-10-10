@@ -1,0 +1,54 @@
+<view class="container {{elderlyMode ? 'elderly-mode' : ''}}">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索景点名称" value="{{searchKeyword}}" bindinput="onInput" />
+    <button class="btn-search" bindtap="onSearch">搜索</button>
+  </view>
+
+  <!-- AI导览入口 -->
+  <view class="ai-entry card" bindtap="onAskAI">
+    <view class="ai-icon">🤖</view>
+    <view class="ai-text">
+      <view class="card-title">AI智能导览</view>
+      <view class="card-content">输入您想了解的景点，AI为您讲解</view>
+    </view>
+    <view class="arrow">›</view>
+  </view>
+
+  <!-- 推荐路线 -->
+  <view class="section-title">推荐路线</view>
+  <view class="route-list">
+    <block wx:for="{{recommendedRoutes}}" wx:key="id">
+      <view class="route-item card" bindtap="onRouteTap" data-route="{{item.name}}">
+        <view class="route-name">{{item.name}}</view>
+        <view class="route-spots">
+          <block wx:for="{{item.spots}}" wx:for-item="spot" wx:key="*this">
+            <text class="spot-tag">{{spot}}</text>
+          </block>
+        </view>
+        <view class="route-duration">⏱ {{item.duration}}</view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 景点列表 -->
+  <view class="section-title">热门景点</view>
+  <view wx:if="{{attractions.length > 0}}" class="attraction-list">
+    <block wx:for="{{attractions}}" wx:key="id">
+      <view class="attraction-item card" bindtap="onAttractionTap" data-id="{{item.id}}">
+        <view class="attraction-name">{{item.title || item.name}}</view>
+        <view class="attraction-info">
+          <text class="attraction-location">📍 {{item.location || '全国'}}</text>
+          <text class="attraction-price">💰 {{item.price || '免费'}}</text>
+        </view>
+        <view class="attraction-summary">{{item.summary || item.description}}</view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{!loading && attractions.length === 0}}" class="empty-state">
+    <view class="empty-icon">🏞</view>
+    <view class="empty-text">暂无景点信息</view>
+  </view>
+</view>

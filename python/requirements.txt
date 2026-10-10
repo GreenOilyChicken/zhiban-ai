@@ -1,0 +1,41 @@
+# 知伴AI — Python 依赖
+# LangChain 生态
+langchain>=0.3.7
+langchain-core>=0.3.21
+langchain-openai>=0.2.0
+langchain-community>=0.3.0
+langchain-chroma>=0.1.4
+langchain-text-splitters>=0.3.0
+
+# 向量数据库
+chromadb>=0.5.20
+
+# Embedding
+sentence-transformers>=2.2.2
+torch>=2.0.0
+
+# LLM Provider SDK
+openai>=1.0.0
+requests>=2.32.3
+
+# 文档处理
+python-docx>=1.1.0
+lxml>=4.9.0
+
+# 环境配置
+python-dotenv>=1.0.0
+
+# 数值计算
+numpy>=1.24,<2.0
+
+# 安全加密（长护险未来对接）
+cryptography>=41.0.0
+
+# RAG HTTP 服务
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+
+# 测试
+pytest>=7.4.0
+pytest-cov>=4.1.0

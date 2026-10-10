@@ -1,0 +1,29 @@
+{
+  "description": "小芯银发适老化AI陪伴微信小程序系统 V1.0",
+  "packOptions": {
+    "ignore": [
+      { "type": "file", "value": ".eslintrc.js" }
+    ]
+  },
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "newFeature": true,
+    "autoAudits": false
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.3.4",
+  "appid": "",
+  "projectname": "xiaoxin-ai-companion",
+  "debugOptions": {
+    "hidedInDevtools": []
+  },
+  "scripts": {},
+  "staticServerOptions": {
+    "baseURL": "",
+    "servePath": ""
+  }
+}

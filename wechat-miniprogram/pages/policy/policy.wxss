@@ -1,0 +1,87 @@
+.container {
+  padding-bottom: 40rpx;
+}
+
+.ask-bar {
+  display: flex;
+  align-items: center;
+  margin: 20rpx;
+  background: #E3F2FD;
+  border-radius: 16rpx;
+  padding: 28rpx 32rpx;
+}
+
+.ask-icon {
+  font-size: 48rpx;
+  margin-right: 20rpx;
+}
+
+.ask-text {
+  flex: 1;
+  font-size: 36rpx;
+  color: #4A90D9;
+}
+
+.ask-arrow {
+  font-size: 48rpx;
+  color: #4A90D9;
+}
+
+.policy-list {
+  padding: 0 20rpx;
+}
+
+.policy-item {
+  margin-bottom: 20rpx;
+}
+
+.policy-title {
+  font-size: 38rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.policy-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.policy-author {
+  font-size: 30rpx;
+  color: #4A90D9;
+}
+
+.policy-date {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.policy-summary {
+  font-size: 34rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 100rpx 0;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 34rpx;
+  color: #999;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 40rpx;
+  font-size: 32rpx;
+  color: #999;
+}

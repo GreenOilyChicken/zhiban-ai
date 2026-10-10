@@ -1,0 +1,85 @@
+.container {
+  padding-bottom: 40rpx;
+}
+
+.search-area {
+  text-align: center;
+}
+
+.search-title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.search-desc {
+  font-size: 32rpx;
+  color: #999;
+  margin-bottom: 32rpx;
+}
+
+.search-input {
+  background: #F5F5F5;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  font-size: 40rpx;
+  margin-bottom: 24rpx;
+}
+
+.quick-drugs {
+  margin-top: 20rpx;
+}
+
+.drug-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.drug-tag {
+  background: #E3F2FD;
+  color: #4A90D9;
+  padding: 16rpx 32rpx;
+  border-radius: 32rpx;
+  font-size: 34rpx;
+}
+
+.result-area {
+  margin-top: 20rpx;
+}
+
+.result-title {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.result-section {
+  margin-bottom: 24rpx;
+}
+
+.section-label {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #4A90D9;
+  margin-bottom: 8rpx;
+}
+
+.section-content {
+  font-size: 36rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+.disclaimer {
+  background: #FFF3E0;
+  border: 2rpx solid #FF9800;
+  border-radius: 8rpx;
+  padding: 24rpx;
+  margin-top: 24rpx;
+  font-size: 30rpx;
+  color: #E65100;
+  line-height: 1.6;
+}
