@@ -39,6 +39,19 @@ rag:
   vector-api-url: ${RAG_VECTOR_API_URL:http://localhost:8081/api/v1/search}
   api-key: ${RAG_API_KEY:}
 
+# Python AI 智能体服务（附件一 §2.1：AI 层独立部署）
+ai-service:
+  base-url: ${AI_SERVICE_URL:http://localhost:8081}
+  timeout-ms: ${AI_SERVICE_TIMEOUT_MS:60000}
+  connect-timeout-ms: 5000
+  api-key: ${AI_SERVICE_API_KEY:}
+
+# 接口频率限制（附件一 §3.6：429 限流）
+rate-limit:
+  enabled: ${RATE_LIMIT_ENABLED:true}
+  max-requests: ${RATE_LIMIT_MAX:300}   # 每窗口最大请求数
+  window-ms: ${RATE_LIMIT_WINDOW_MS:60000}
+
 server:
   port: 8080
   servlet:

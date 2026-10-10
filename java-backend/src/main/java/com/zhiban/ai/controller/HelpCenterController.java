@@ -88,6 +88,15 @@ public class HelpCenterController {
         return Result.success(result);
     }
 
+    /**
+     * 获取单条政策完整内容
+     * 附件一 §3.5：政策详情
+     */
+    @GetMapping("/gov-policy/{id}")
+    public Result<GovPolicyVO> getGovPolicy(@PathVariable Long id) {
+        return Result.success(helpCenterService.getGovPolicyById(id));
+    }
+
     // ==================== FAQ ====================
 
     /**
