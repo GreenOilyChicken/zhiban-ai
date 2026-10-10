@@ -65,6 +65,57 @@
       </el-row>
     </section>
 
+    <!-- 精选文章 + 系统公告（附件一 §4.1）-->
+    <section class="home-content">
+      <el-row :gutter="24">
+        <el-col :xs="24" :md="16">
+          <el-card shadow="never" class="content-card">
+            <template #header>
+              <div class="card-head">
+                <span class="card-title">
+                  <el-icon><Document /></el-icon> 精选文章
+                </span>
+                <el-button text type="primary" @click="$router.push('/help/articles')">
+                  查看全部 <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+                </el-button>
+              </div>
+            </template>
+
+            <div v-loading="loadingArticles">
+              <el-empty v-if="!articles.length" description="暂无文章" :image-size="80" />
+              <ul v-else class="article-list">
+                <li
+                  v-for="item in articles"
+                  :key="item.id"
+                  class="article-item"
+                  @click="$router.push(`/help/article/${item.id}`)"
+                >
+                  <span class="article-title">{{ item.title }}</span>
+                  <el-tag v-if="item.category" size="small" type="info">{{ item.category }}</el-tag>
+                </li>
+              </ul>
+            </div>
+          </el-card>
+        </el-col>
+
+        <el-col :xs="24" :md="8">
+          <el-card shadow="never" class="content-card">
+            <template #header>
+              <span class="card-title">
+                <el-icon><Bell /></el-icon> 系统公告
+              </span>
+            </template>
+            <ul class="notice-list">
+              <li v-for="(n, i) in notices" :key="i" class="notice-item">
+                <el-tag size="small" :type="n.type">{{ n.tag }}</el-tag>
+                <span>{{ n.text }}</span>
+              </li>
+            </ul>
+          </el-card>
+        </el-col>
+      </el-row>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
       <p>知伴AI © 2026 · 双端智能体平台 · 技术驱动民生服务</p>
@@ -73,13 +124,39 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { getArticles } from '@/api/help'
 
 const router = useRouter()
+
+const articles = ref([])
+const loadingArticles = ref(false)
+
+// 系统公告（当前为静态配置，可由管理端后续接入）
+const notices = ref([
+  { tag: '服务', type: 'primary', text: '银发康养智能体已上线，支持用药指导与康复计划' },
+  { tag: '政策', type: 'success', text: '政策问答支持来源追溯，回答均标注政策文件' },
+  { tag: '提示', type: 'warning', text: '健康类建议仅供参考，请遵医嘱' }
+])
 
 function goToTab(tab) {
   router.push({ path: '/help', query: { tab } })
 }
+
+async function loadArticles() {
+  loadingArticles.value = true
+  try {
+    const res = await getArticles({ page: 1, size: 6 })
+    articles.value = res.data?.records || []
+  } catch {
+    // 错误已由拦截器处理
+  } finally {
+    loadingArticles.value = false
+  }
+}
+
+onMounted(loadArticles)
 </script>
 
 <style scoped>
@@ -208,5 +285,82 @@ function goToTab(tab) {
   font-size: 14px;
   background: #fff;
   margin-top: auto;
+}
+
+/* 精选文章 + 系统公告 */
+.home-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+  width: 100%;
+}
+
+.content-card {
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.article-list,
+.notice-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.article-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.article-item:last-child {
+  border-bottom: none;
+}
+
+.article-item:hover .article-title {
+  color: #409eff;
+}
+
+.article-title {
+  font-size: 15px;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notice-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+  border-bottom: 1px dashed #f0f0f0;
+}
+
+.notice-item:last-child {
+  border-bottom: none;
 }
 </style>

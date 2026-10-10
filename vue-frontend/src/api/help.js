@@ -1,5 +1,4 @@
 import request from './index'
-import { setToken } from './index'
 
 // ==================== 文章相关 ====================
 
@@ -63,9 +62,9 @@ export function askPolicy(data) {
 
 // ==================== 配额 ====================
 
-// 获取配额（字段：totalQuota / usedQuota / remainingQuota）
-export function getQuota() {
-  return request.get('/help/quota')
+// 获取配额（需指定配额类型，附件一 §3.5）
+export function getQuota(quotaType = 'POLICY_QA') {
+  return request.get('/help/quota', { params: { quotaType } })
 }
 
 // ==================== 分类 ====================
@@ -74,17 +73,20 @@ export function getCategories() {
   return request.get('/help/categories')
 }
 
+// 政策详情（附件一 §3.5）
+export function getGovPolicyDetail(id) {
+  return request.get(`/help/gov-policy/${id}`)
+}
+
 // ==================== 认证 ====================
 
-export function login(data) {
-  return request.post('/auth/login', data).then((res) => {
-    if (res.data?.token) {
-      setToken(res.data.token)
-    }
-    return res
-  })
-}
-
-export function register(data) {
-  return request.post('/auth/register', data)
-}
+// 认证相关接口统一从 api/auth.js 导出，此处保留向后兼容的转发
+export {
+  login,
+  register,
+  guestLogin,
+  sendSmsCode,
+  phoneLogin,
+  refreshToken,
+  getUserInfo
+} from './auth'

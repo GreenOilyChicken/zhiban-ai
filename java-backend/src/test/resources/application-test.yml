@@ -21,8 +21,9 @@ jwt:
 
 ai-service:
   base-url: http://localhost:8081
-  timeout-ms: 5000
-  connect-timeout-ms: 1000
+  # 大模型生成较慢，联调测试需较长超时
+  timeout-ms: 180000
+  connect-timeout-ms: 3000
 
 rate-limit:
   enabled: false
