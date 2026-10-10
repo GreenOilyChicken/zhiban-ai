@@ -36,3 +36,4 @@ vue-frontend/.vite/
 # ── 本地依赖目录（不提交）─────────
 python/.pylibs/
 .pip-install.log
+python/knowledge_base/chroma_db/

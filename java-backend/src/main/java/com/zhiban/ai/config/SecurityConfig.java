@@ -82,14 +82,23 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // 公开接口
-                .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                // 公开接口（附件一 §3.1：游客登录、手机号登录无需凭证）
+                .requestMatchers(
+                    "/api/auth/login",
+                    "/api/auth/register",
+                    "/api/auth/guest-login",
+                    "/api/auth/phone-login",
+                    "/api/auth/sms-code",
+                    "/api/auth/refresh"
+                ).permitAll()
                 .requestMatchers("/api/help/articles", "/api/help/article/**").permitAll()
                 .requestMatchers("/api/help/gov-policy").permitAll()
                 .requestMatchers("/api/help/categories").permitAll()
                 .requestMatchers("/api/help/faq").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/error").permitAll()
+                // WebSocket 握手由 JwtHandshakeInterceptor 校验 token
+                .requestMatchers("/ws/**").permitAll()
                 // 管理员接口需要 ADMIN 角色（同时由 @PreAuthorize 在方法级二次校验）
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // 其余请求需要认证

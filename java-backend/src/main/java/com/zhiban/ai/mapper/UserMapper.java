@@ -39,4 +39,18 @@ public interface UserMapper extends BaseMapper<User> {
         WHERE username = #{username} AND deleted = 0
         """)
     int countByUsername(@Param("username") String username);
+
+    /**
+     * 根据手机号查询用户（用于手机号登录）
+     *
+     * @param phone 手机号
+     * @return 用户实体
+     */
+    @Select("""
+        SELECT id, username, password, phone, role, avatar, create_time, update_time
+        FROM user
+        WHERE phone = #{phone} AND deleted = 0
+        LIMIT 1
+        """)
+    User selectByPhone(@Param("phone") String phone);
 }

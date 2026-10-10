@@ -92,8 +92,26 @@ class ModelFactory:
 
     @classmethod
     def get_embeddings(cls):
-        """获取 BGE Embedding 实例（惰性单例）"""
+        """
+        获取 Embedding 实例（惰性单例）
+
+        按 config.EMBEDDING_PROVIDER 选择：
+          - bge  : HuggingFaceBgeEmbeddings（生产默认，中文语义检索）
+          - hash : 确定性哈希向量（离线兜底，仅用于链路验证）
+        """
         if cls._embeddings is not None:
+            return cls._embeddings
+
+        provider = getattr(config, "EMBEDDING_PROVIDER", "bge")
+
+        if provider == "hash":
+            from base.hash_embeddings import HashEmbeddings
+            cls._embeddings = HashEmbeddings(dim=getattr(config, "HASH_EMBEDDING_DIM", 512))
+            logger.warning(
+                "Embeddings 使用离线兜底实现（hash, dim=%d）：仅用于链路验证，"
+                "生产环境请设置 EMBEDDING_PROVIDER=bge",
+                getattr(config, "HASH_EMBEDDING_DIM", 512),
+            )
             return cls._embeddings
 
         from langchain_community.embeddings import HuggingFaceBgeEmbeddings

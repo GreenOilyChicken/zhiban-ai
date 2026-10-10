@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
 import config
@@ -418,6 +418,49 @@ def agent_chat(req: ChatRequest):
     except Exception as e:
         logger.error("智能体对话失败: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"对话失败: {e}")
+
+
+@app.post("/api/v1/chat/stream")
+def agent_chat_stream(req: ChatRequest):
+    """
+    智能体对话（SSE 流式）
+
+    以 text/event-stream 逐块返回，事件格式：
+        data: {"delta": "文本片段", "done": false}
+        data: {"delta": "", "done": true, "agent": "tourism"}
+    """
+    if not req.message or not req.message.strip():
+        raise HTTPException(status_code=400, detail="message不能为空")
+
+    agent_key = _normalize_agent(req.agent)
+    history = _to_chat_history(req.history)
+    message = req.message.strip()
+
+    def event_stream():
+        import json as _json
+        try:
+            agent = _get_agent(agent_key)
+        except Exception as e:
+            logger.error("智能体初始化失败: %s", e, exc_info=True)
+            yield f"data: {_json.dumps({'delta': '', 'done': True, 'error': str(e)}, ensure_ascii=False)}\n\n"
+            return
+
+        try:
+            for piece in agent.stream(message, chat_history=history):
+                if piece:
+                    payload = {"delta": piece, "done": False, "agent": agent_key}
+                    yield f"data: {_json.dumps(payload, ensure_ascii=False)}\n\n"
+            yield f"data: {_json.dumps({'delta': '', 'done': True, 'agent': agent_key}, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            logger.error("智能体流式对话失败: %s", e, exc_info=True)
+            payload = {"delta": "", "done": True, "error": str(e)[:200]}
+            yield f"data: {_json.dumps(payload, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # ── 语音（TTS / ASR） ────────────────────────────────────

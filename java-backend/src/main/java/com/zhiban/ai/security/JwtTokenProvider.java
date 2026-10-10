@@ -121,4 +121,12 @@ public class JwtTokenProvider {
             return false;
         }
     }
+
+    /**
+     * Token 有效期（毫秒）
+     * 附件一 §3.6：JWT Token 有效期不少于 24 小时
+     */
+    public long getExpirationMs() {
+        return jwtExpiration;
+    }
 }

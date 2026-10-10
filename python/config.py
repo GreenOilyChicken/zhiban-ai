@@ -67,8 +67,14 @@ LLM_TEMPERATURE = _env_float("LLM_TEMPERATURE", 0.3)
 LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 2048)
 
 # ── Embedding 配置 ────────────────────────────────────
+# EMBEDDING_PROVIDER:
+#   bge    —— 生产默认，BGE 中文语义向量（需 sentence-transformers + 本地模型）
+#   hash   —— 离线兜底，确定性哈希向量，仅用于无网络/无模型环境的链路验证
+EMBEDDING_PROVIDER = _env("EMBEDDING_PROVIDER", "bge").lower()
 BGE_MODEL_NAME = _env("BGE_MODEL_NAME", "BAAI/bge-small-zh-v1.5")
 EMBEDDING_DEVICE = _env("EMBEDDING_DEVICE", "cpu")
+# 离线兜底向量的维度（仅 hash provider 使用）
+HASH_EMBEDDING_DIM = _env_int("HASH_EMBEDDING_DIM", 512)
 
 # ── 知识库路径 ────────────────────────────────────────
 KB_POLICY_DIR = _env_path("KB_POLICY_DIR", PROJECT_ROOT / "knowledge_base" / "policies")

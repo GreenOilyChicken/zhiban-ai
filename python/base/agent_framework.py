@@ -165,6 +165,59 @@ class Agent:
                 err_msg = err_msg[:200] + "..."
             return f"处理您的问题时出现了错误：{err_msg}"
 
+    def stream(self, query: str, chat_history: Optional[List] = None):
+        """
+        流式执行查询，逐块产出文本增量（用于 SSE）。
+
+        有工具时先走完整 Agent 流程（工具调用不适合流式），
+        拿到最终结果后按句/块切分产出；无工具时直接走 LLM 流式接口。
+
+        Yields:
+            str: 文本增量片段
+        """
+        # 无工具：直接流式调用 LLM
+        if not self.tools:
+            try:
+                messages = [("system", self.system_prompt)]
+                if chat_history:
+                    messages.extend(chat_history)
+                messages.append(("human", query))
+                for chunk in self.llm.stream(messages):
+                    text = chunk.content if hasattr(chunk, "content") else str(chunk)
+                    if text:
+                        yield text
+                return
+            except Exception as e:
+                logger.error(f"LLM 流式调用失败: {e}")
+                yield "抱歉，处理您的问题时出现了错误，请稍后重试。"
+                return
+
+        # 有工具：先完整执行（含工具调用），再分块产出
+        result = self.run(query, chat_history=chat_history)
+        for piece in _chunk_text(result):
+            yield piece
+
+
+def _chunk_text(text: str, size: int = 24):
+    """
+    把完整文本切成便于流式展示的片段。
+
+    优先在标点/换行处断开，避免把句子切得过于零碎。
+    """
+    if not text:
+        return
+    buf = ""
+    for ch in text:
+        buf += ch
+        if len(buf) >= size and ch in "。！？；\n，、：":
+            yield buf
+            buf = ""
+        elif len(buf) >= size * 3:
+            yield buf
+            buf = ""
+    if buf:
+        yield buf
+
 
 # ── PlannerExecutorTeam ──────────────────────────────
 
