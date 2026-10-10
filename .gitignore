@@ -40,3 +40,4 @@ python/knowledge_base/chroma_db/
 
 # ── 本地构建工具 ──────────────────
 .tools/
+java-backend/src/test/resources/schema-h2.sql

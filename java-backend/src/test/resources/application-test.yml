@@ -1,0 +1,33 @@
+# 集成测试配置：H2 内存库（MySQL 兼容模式）+ 禁用限流
+spring:
+  datasource:
+    # NON_KEYWORDS=USER：user 是 H2 保留字，需放行以兼容 MySQL 表名
+    url: jdbc:h2:mem:zhiban_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-h2.sql
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+jwt:
+  secret: test-secret-key-for-integration-tests-32bytes-min
+  expiration: 86400000
+
+ai-service:
+  base-url: http://localhost:8081
+  timeout-ms: 5000
+  connect-timeout-ms: 1000
+
+rate-limit:
+  enabled: false
+
+logging:
+  level:
+    com.zhiban.ai: info
+    org.springframework: warn

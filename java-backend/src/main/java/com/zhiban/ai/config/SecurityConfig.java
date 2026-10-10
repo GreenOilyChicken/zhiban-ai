@@ -83,24 +83,27 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // 公开接口（附件一 §3.1：游客登录、手机号登录无需凭证）
+                //
+                // 注意：server.servlet.context-path=/api 已被 Servlet 容器剥离，
+                // 因此此处匹配的是「去掉 /api 前缀」后的路径。
                 .requestMatchers(
-                    "/api/auth/login",
-                    "/api/auth/register",
-                    "/api/auth/guest-login",
-                    "/api/auth/phone-login",
-                    "/api/auth/sms-code",
-                    "/api/auth/refresh"
+                    "/auth/login",
+                    "/auth/register",
+                    "/auth/guest-login",
+                    "/auth/phone-login",
+                    "/auth/sms-code",
+                    "/auth/refresh"
                 ).permitAll()
-                .requestMatchers("/api/help/articles", "/api/help/article/**").permitAll()
-                .requestMatchers("/api/help/gov-policy").permitAll()
-                .requestMatchers("/api/help/categories").permitAll()
-                .requestMatchers("/api/help/faq").permitAll()
+                .requestMatchers("/help/articles", "/help/article/**").permitAll()
+                .requestMatchers("/help/gov-policy", "/help/gov-policy/**").permitAll()
+                .requestMatchers("/help/categories").permitAll()
+                .requestMatchers("/help/faq").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/error").permitAll()
-                // WebSocket 握手由 JwtHandshakeInterceptor 校验 token
+                // WebSocket 握手由 ChatWebSocketHandler 自行处理鉴权
                 .requestMatchers("/ws/**").permitAll()
                 // 管理员接口需要 ADMIN 角色（同时由 @PreAuthorize 在方法级二次校验）
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 // 其余请求需要认证
                 .anyRequest().authenticated()
             )
