@@ -37,3 +37,6 @@ vue-frontend/.vite/
 python/.pylibs/
 .pip-install.log
 python/knowledge_base/chroma_db/
+
+# ── 本地构建工具 ──────────────────
+.tools/
