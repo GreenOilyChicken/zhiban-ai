@@ -30,6 +30,7 @@ from knowledge_base.build_kb import (
     build_knowledge_base,
     load_knowledge_base,
     query_knowledge_base,
+    _collection_has_data,
 )
 
 logger = logging.getLogger(__name__)
@@ -527,17 +528,47 @@ async def speech_to_text(file: UploadFile = File(...)):
 
 @app.on_event("startup")
 def startup_event():
-    """启动时打印配置摘要"""
+    """启动时打印配置摘要，并按需自动构建空的知识库"""
     logger.info("=" * 50)
     logger.info("知伴AI 智能体与RAG服务启动中...")
     logger.info("  LLM Provider  : %s", config.LLM_PROVIDER)
     logger.info("  LLM Base URL  : %s", _llm_base_url())
+    logger.info("  Embedding     : %s", getattr(config, "EMBEDDING_PROVIDER", "bge"))
     logger.info("  BGE Model     : %s", config.BGE_MODEL_NAME)
     logger.info("  Embed Device  : %s", config.EMBEDDING_DEVICE)
     logger.info("  KB Chroma Dir : %s", config.KB_CHROMA_DIR)
     logger.info("  Collections   : %s", ", ".join(COLLECTION_MAP.keys()))
     logger.info("=" * 50)
+
+    # 附件一 §7.1：知识库须支持批量构建；首次部署时自动建库，避免检索为空
+    if os.getenv("KB_AUTO_BUILD", "true").lower() == "true":
+        _auto_build_knowledge_bases()
+    else:
+        logger.info("KB_AUTO_BUILD=false，跳过自动建库（可调用 /api/v1/build 手动构建）")
+
     logger.info("向量库采用惰性加载，首次检索时初始化")
+
+
+def _auto_build_knowledge_bases():
+    """为尚未建库的 collection 自动构建（已存在则跳过，保证幂等）"""
+    for collection in COLLECTION_MAP:
+        persist_dir = config.KB_CHROMA_DIR / collection
+        if _collection_has_data(persist_dir):
+            logger.info("知识库已存在，跳过构建: %s", collection)
+            continue
+
+        doc_dir = _doc_dir_for(collection)
+        try:
+            logger.info("自动构建知识库: collection=%s, docs=%s", collection, doc_dir)
+            build_knowledge_base(
+                docs_dir=doc_dir,
+                collection_name=collection,
+                persist_dir=persist_dir,
+                rebuild=False,
+            )
+            _drop_cache(collection)
+        except Exception as e:
+            logger.error("自动构建知识库失败: %s (%s)", collection, e)
 
 
 def _llm_base_url() -> str:

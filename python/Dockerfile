@@ -6,19 +6,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     g++ \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+# 优先使用锁定版本，保证可复现构建
+COPY requirements.txt requirements.lock.txt ./
+RUN pip install --no-cache-dir --user -r requirements.lock.txt
 
 # ── 运行阶段 ──────────────────────────────
 
 FROM python:3.11-slim
 
 LABEL maintainer="zhiban-ai"
-LABEL description="知伴AI RAG检索服务"
+LABEL description="知伴AI 智能体与RAG服务"
 
 WORKDIR /app
+
+# ffmpeg：ASR 音频格式转换依赖
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
 # 复制 pip 安装的包
 COPY --from=builder /root/.local /root/.local
@@ -32,6 +38,8 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 ENV RAG_HOST=0.0.0.0
 ENV RAG_PORT=8081
+# 生产默认使用 BGE 语义向量；离线环境可覆盖为 hash
+ENV EMBEDDING_PROVIDER=bge
 
 # 知识库默认路径（容器内）
 ENV KB_POLICY_DIR=/app/knowledge_base/policies
@@ -46,7 +54,7 @@ RUN mkdir -p /app/knowledge_base/chroma_db /app/output/ledgers
 EXPOSE 8081
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8081/api/v1/health')" || exit 1
 
 CMD ["python", "rag_server.py"]

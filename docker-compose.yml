@@ -65,11 +65,23 @@ services:
       QWEN_API_KEY: ${QWEN_API_KEY:-}
       QWEN_BASE_URL: ${QWEN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
       QWEN_MODEL: ${QWEN_MODEL:-qwen-plus}
+      # CodeBuddy 本地代理（仅开发联调）
+      CODEBUDDY_API_KEY: ${CODEBUDDY_API_KEY:-}
+      CODEBUDDY_BASE_URL: ${CODEBUDDY_BASE_URL:-http://host.docker.internal:3800/v1}
+      CODEBUDDY_MODEL: ${CODEBUDDY_MODEL:-deepseek-v4-flash}
       LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.3}
       LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-2048}
       # Embedding 配置
+      # 生产用 bge（需下载模型）；离线环境可设 hash 做链路验证
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-bge}
       BGE_MODEL_NAME: ${BGE_MODEL_NAME:-BAAI/bge-small-zh-v1.5}
       EMBEDDING_DEVICE: ${EMBEDDING_DEVICE:-cpu}
+      # 语音（TTS/ASR）：留空走内置 edge-tts / whisper
+      ALIYUN_ACCESS_KEY_ID: ${ALIYUN_ACCESS_KEY_ID:-}
+      ALIYUN_ACCESS_KEY_SECRET: ${ALIYUN_ACCESS_KEY_SECRET:-}
+      ALIYUN_NLS_APP_KEY: ${ALIYUN_NLS_APP_KEY:-}
+      ALIYUN_NLS_TOKEN: ${ALIYUN_NLS_TOKEN:-}
+      ASR_MODEL: ${ASR_MODEL:-small}
       # RAG 服务配置
       RAG_HOST: 0.0.0.0
       RAG_PORT: 8081
@@ -117,10 +129,18 @@ services:
       DB_PORT: 3306
       DB_NAME: zhiban_ai
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-zhiban123}
-      JWT_SECRET: ${JWT_SECRET:-zhiban-ai-jwt-secret-key-change-in-production-32chars}
+      # 安全：不提供默认值，未注入即启动失败（避免弱口令上线）
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 必须通过 .env.docker 注入}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 必须通过 .env.docker 注入}
+      # Python AI 智能体服务（附件一 §2.1 AI 层独立部署）
+      AI_SERVICE_URL: http://python-ai:8081
+      AI_SERVICE_API_KEY: ${RAG_API_KEY:-}
       RAG_VECTOR_API_URL: http://python-ai:8081/api/v1/search
       RAG_API_KEY: ${RAG_API_KEY:-}
+      # 接口限流（附件一 §3.6）
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-300}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
     ports:
       - "8080:8080"
     healthcheck:
