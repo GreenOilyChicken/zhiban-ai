@@ -156,8 +156,8 @@ def _query_rag(query: str, top_k: int = 5) -> List[str]:
 
             docs = query_knowledge_base(
                 query=query,
-                chroma_dir=config.KB_ELDERLY_DIR / "chroma_db",
-                collection_name="elderly_care",
+                chroma_dir=config.KB_CHROMA_DIR / config.COLLECTION_ELDERLY,
+                collection_name=config.COLLECTION_ELDERLY,
                 top_k=top_k,
             )
             for doc in docs:

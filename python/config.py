@@ -1,6 +1,6 @@
 """
 知伴AI — 全局配置模块
-支持多 Provider（DeepSeek / OpenAI / Qwen）切换
+支持多 Provider（DeepSeek / OpenAI / Qwen / CodeBuddy 代理）切换
 """
 import os
 from pathlib import Path
@@ -57,6 +57,12 @@ QWEN_API_KEY = _env("QWEN_API_KEY", "")
 QWEN_BASE_URL = _env("QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
 QWEN_MODEL = _env("QWEN_MODEL", "qwen-plus")
 
+# ── CodeBuddy 代理（本地测试用，OpenAI 兼容接口）──────
+# 把 LLM_PROVIDER 设为 codebuddy 即可走本地代理，无需真实厂商 Key。
+CODEBUDDY_API_KEY = _env("CODEBUDDY_API_KEY", "")
+CODEBUDDY_BASE_URL = _env("CODEBUDDY_BASE_URL", "http://127.0.0.1:3800/v1")
+CODEBUDDY_MODEL = _env("CODEBUDDY_MODEL", "deepseek-v4-flash")
+
 LLM_TEMPERATURE = _env_float("LLM_TEMPERATURE", 0.3)
 LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 2048)
 
@@ -69,6 +75,18 @@ KB_POLICY_DIR = _env_path("KB_POLICY_DIR", PROJECT_ROOT / "knowledge_base" / "po
 KB_ELDERLY_DIR = _env_path("KB_ELDERLY_DIR", PROJECT_ROOT / "knowledge_base" / "elderly")
 KB_TOURISM_DIR = _env_path("KB_TOURISM_DIR", PROJECT_ROOT / "knowledge_base" / "tourism")
 KB_CHROMA_DIR = _env_path("KB_CHROMA_DIR", PROJECT_ROOT / "knowledge_base" / "chroma_db")
+
+# ── 知识库 Collection 命名（三库统一，供 Java/Python 双方对齐）──
+COLLECTION_GOVPOLICY = _env("COLLECTION_GOVPOLICY", "govpolicy")
+COLLECTION_ELDERLY = _env("COLLECTION_ELDERLY", "elderly")
+COLLECTION_TOURISM = _env("COLLECTION_TOURISM", "tourism")
+
+# collection -> 源文档目录
+KB_COLLECTIONS = {
+    COLLECTION_GOVPOLICY: KB_POLICY_DIR,
+    COLLECTION_ELDERLY: KB_ELDERLY_DIR,
+    COLLECTION_TOURISM: KB_TOURISM_DIR,
+}
 
 # ── 台账输出 ──────────────────────────────────────────
 LEDGER_OUTPUT_DIR = _env_path("LEDGER_OUTPUT_DIR", PROJECT_ROOT / "output" / "ledgers")
@@ -102,6 +120,10 @@ def print_config_summary():
     elif LLM_PROVIDER == "qwen":
         print(f"  {dump('API Key', QWEN_API_KEY)}")
         print(f"  Model        : {QWEN_MODEL}")
+    elif LLM_PROVIDER == "codebuddy":
+        print(f"  {dump('API Key', CODEBUDDY_API_KEY)}")
+        print(f"  Model        : {CODEBUDDY_MODEL}")
+        print(f"  Base URL     : {CODEBUDDY_BASE_URL}")
     print(f"  Temperature  : {LLM_TEMPERATURE}")
     print(f"  Max Tokens   : {LLM_MAX_TOKENS}")
     print(f"  BGE Model    : {BGE_MODEL_NAME}")

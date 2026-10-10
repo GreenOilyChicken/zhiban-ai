@@ -45,14 +45,18 @@ def test_load_documents(tmp_path):
 
 
 def test_split_documents():
-    """测试文档分割"""
+    """测试文档分割（长文本必须被切成多片）"""
     from knowledge_base.build_kb import _split
 
     docs = [
-        Document(page_content="这是一段很长的文字。" * 50, metadata={"source": "test.txt"}),
+        Document(page_content="这是一段很长的文字。" * 200, metadata={"source": "test.txt"}),
     ]
     chunks = _split(docs)
     assert len(chunks) > 1
+    # 每个片段都不应超过 chunk_size 太多
+    assert all(len(c.page_content) <= 700 for c in chunks)
+    # 元数据应被继承，供来源标注使用
+    assert chunks[0].metadata.get("source") == "test.txt"
 
 
 def test_collection_has_data(tmp_path):
@@ -99,7 +103,7 @@ def test_query_input_length_limit():
 
 
 @pytest.mark.skipif(
-    not Path(__file__).resolve().parent.parent / "knowledge_base" / "policies" .exists(),
+    not (Path(__file__).resolve().parent.parent / "knowledge_base" / "policies").exists(),
     reason="CI 环境可能缺少政策文档"
 )
 def test_policies_dir_has_all_4_categories():

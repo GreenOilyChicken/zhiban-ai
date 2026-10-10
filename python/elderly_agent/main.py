@@ -81,22 +81,20 @@ def _build_kb(rebuild: bool = False) -> bool:
     print(f"[1] 开始构建知识库...")
     print(f"    文档目录: {doc_dir}")
     print(f"    文档数量: {doc_count}")
-    print(f"    Chroma 存储: {config.KB_ELDERLY_DIR / 'chroma_db'}")
+    chroma_dir = config.KB_CHROMA_DIR / config.COLLECTION_ELDERLY
+    print(f"    Chroma 存储: {chroma_dir}")
 
     try:
         from knowledge_base.build_kb import build_knowledge_base
 
-        success = build_knowledge_base(
+        build_knowledge_base(
             doc_dir=doc_dir,
-            chroma_dir=config.KB_ELDERLY_DIR / "chroma_db",
+            chroma_dir=chroma_dir,
             rebuild=rebuild,
-            collection_name="elderly_care",
+            collection_name=config.COLLECTION_ELDERLY,
         )
-        if success:
-            print("[OK] 知识库构建完成！")
-        else:
-            print("[FAIL] 知识库构建失败，请查看日志。")
-        return success
+        print("[OK] 知识库构建完成！")
+        return True
     except Exception as e:
         print(f"[ERROR] 知识库构建出错: {e}")
         logger.error(f"知识库构建失败: {e}", exc_info=True)

@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 # ── 常量 ──────────────────────────────────────────────
 
 MAX_QUERY_LENGTH = 10000
-COLLECTION_NAME = "govpolicy"
+COLLECTION_NAME = config.COLLECTION_GOVPOLICY
 
 # ── 线程安全的向量库缓存 ──────────────────────────────
 

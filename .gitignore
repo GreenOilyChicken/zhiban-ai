@@ -32,3 +32,7 @@ vue-frontend/.vite/
 
 # ── Docker ───────────────────
 .env.docker
+
+# ── 本地依赖目录（不提交）─────────
+python/.pylibs/
+.pip-install.log

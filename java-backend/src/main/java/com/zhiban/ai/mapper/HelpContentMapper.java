@@ -2,7 +2,7 @@ package com.zhiban.ai.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.metadata.Page;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zhiban.ai.entity.HelpContent;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

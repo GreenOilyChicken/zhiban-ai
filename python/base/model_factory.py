@@ -72,6 +72,18 @@ class ModelFactory:
                 max_tokens=config.LLM_MAX_TOKENS,
             )
 
+        elif provider == "codebuddy":
+            # 本地 CodeBuddy 代理（OpenAI 兼容），用于开发/联调测试
+            api_key = config.CODEBUDDY_API_KEY or "codebuddy-local"
+            from langchain_openai import ChatOpenAI
+            cls._llm = ChatOpenAI(
+                api_key=api_key,
+                base_url=config.CODEBUDDY_BASE_URL,
+                model=config.CODEBUDDY_MODEL,
+                temperature=config.LLM_TEMPERATURE,
+                max_tokens=config.LLM_MAX_TOKENS,
+            )
+
         else:
             raise ValueError(f"不支持的 LLM Provider: {provider}")
 
