@@ -15,60 +15,66 @@ Page({
 
   onLoad() {
     this.setData({ elderlyMode: app.globalData.elderlyMode })
-    this.loadAttractions()
-  },
-
-  loadAttractions() {
-    this.setData({ loading: true })
-    app.request({
-      url: '/help/tourism/attractions',
-      data: { page: 1, size: 10 }
-    }).then(res => {
-      const attractions = res.records || res.list || []
-      this.setData({ attractions, loading: false })
-    }).catch(() => {
-      this.setData({ loading: false })
-    })
   },
 
   onInput(e) {
     this.setData({ searchKeyword: e.detail.value })
   },
 
+  /**
+   * 景点查询：走文旅智能体（附件一 §6.4 景点导览）
+   */
   onSearch() {
     const keyword = this.data.searchKeyword.trim()
     if (!keyword) {
-      this.loadAttractions()
+      wx.showToast({ title: '请输入景点或城市名称', icon: 'none' })
       return
     }
-    this.setData({ loading: true })
-    app.request({
-      url: '/help/tourism/attractions',
-      data: { keyword, page: 1, size: 10 }
-    }).then(res => {
-      this.setData({ attractions: res.records || [], loading: false })
+
+    this.setData({ loading: true, attractions: [] })
+    app.sendChat(
+      `请介绍「${keyword}」的开放时间、门票价格、交通方式和主要看点。`,
+      'tourism'
+    ).then((res) => {
+      this.setData({
+        attractions: [{
+          id: 0,
+          name: keyword,
+          summary: (res && res.content) || '暂时没有查到相关信息。'
+        }],
+        loading: false
+      })
     }).catch(() => {
       this.setData({ loading: false })
+      wx.showToast({ title: '查询失败，请稍后重试', icon: 'none' })
     })
   },
 
-  onAttractionTap(e) {
-    const id = e.currentTarget.dataset.id
-    wx.navigateTo({
-      url: `/pages/tourism/detail?id=${id}`
-    })
-  },
-
+  /**
+   * 路线规划：跳转对话页由文旅智能体规划（附件一 §6.4 路线规划）
+   */
   onRouteTap(e) {
     const route = e.currentTarget.dataset.route
     wx.navigateTo({
-      url: `/pages/chat/chat?type=tourism&q=${encodeURIComponent('我想了解' + route.name + '路线')}`
+      url: `/pages/chat/chat?type=tourism&q=${encodeURIComponent('请帮我规划' + route.name + '，按上下午晚间分段安排')}`
+    })
+  },
+
+  /**
+   * 景点详情页（附件一 §5.1 文旅导览）
+   */
+  onAttractionTap(e) {
+    const name = e.currentTarget.dataset.name
+    wx.navigateTo({
+      url: `/pages/tourism/detail/detail?name=${encodeURIComponent(name)}`
     })
   },
 
   onAskAI() {
-    wx.navigateTo({
-      url: '/pages/chat/chat?type=tourism'
-    })
+    wx.navigateTo({ url: '/pages/chat/chat?type=tourism' })
+  },
+
+  onCallEmergency() {
+    wx.makePhoneCall({ phoneNumber: '120' })
   }
 })

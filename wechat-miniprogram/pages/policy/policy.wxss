@@ -49,12 +49,12 @@
 }
 
 .policy-author {
-  font-size: 30rpx;
+  font-size: 32rpx;
   color: #4A90D9;
 }
 
 .policy-date {
-  font-size: 28rpx;
+  font-size: 32rpx;
   color: #999;
 }
 

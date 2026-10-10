@@ -1,0 +1,59 @@
+.container { padding: 20rpx 0 40rpx; }
+
+.detail-card { margin: 20rpx; padding: 32rpx; }
+
+.detail-name {
+  font-size: 46rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.detail-body {
+  font-size: 38rpx;
+  color: #333;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.tip-box {
+  margin: 20rpx 32rpx;
+  padding: 24rpx;
+  background: #E8F5E9;
+  border-left: 8rpx solid #43A047;
+  border-radius: 8rpx;
+}
+
+.tip-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #2E7D32;
+  margin-bottom: 12rpx;
+}
+
+.tip-item {
+  font-size: 34rpx;
+  color: #33691E;
+  line-height: 1.8;
+}
+
+.ask-btn { margin: 20rpx 32rpx 12rpx; }
+
+.emergency-btn {
+  margin: 0 32rpx;
+  background: #fff;
+  color: #E53935;
+  border: 2rpx solid #E53935;
+  font-size: 36rpx;
+  border-radius: 12rpx;
+  padding: 20rpx 0;
+}
+
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 120rpx 40rpx;
+  color: #999;
+  font-size: 36rpx;
+}
+
+.empty-icon { font-size: 96rpx; margin-bottom: 20rpx; }

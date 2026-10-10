@@ -81,11 +81,11 @@
   color: #4A90D9;
   padding: 8rpx 24rpx;
   border-radius: 24rpx;
-  font-size: 28rpx;
+  font-size: 32rpx;
 }
 
 .route-duration {
-  font-size: 30rpx;
+  font-size: 32rpx;
   color: #999;
 }
 
@@ -112,7 +112,7 @@
 
 .attraction-location,
 .attraction-price {
-  font-size: 30rpx;
+  font-size: 32rpx;
   color: #666;
 }
 

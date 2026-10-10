@@ -25,6 +25,13 @@ Page({
   onMenuTap(e) {
     const id = e.currentTarget.dataset.id
     switch (id) {
+      case 'history':
+        // 咨询记录：跳转对话页查看/继续对话（附件一 §5.1）
+        wx.navigateTo({ url: '/pages/chat/chat' })
+        break
+      case 'medication':
+        wx.navigateTo({ url: '/pages/medication/medication' })
+        break
       case 'settings':
         this.toggleElderlyMode()
         break

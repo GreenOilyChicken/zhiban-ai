@@ -13,7 +13,7 @@
   <view class="quick-drugs card">
     <view class="card-title">常用药品</view>
     <view class="drug-tags">
-      <block wx:for="{{emergencyDrugs}}" wx:key="name">
+      <block wx:for="{{commonDrugs}}" wx:key="name">
         <view class="drug-tag" bindtap="onQuickSelect" data-name="{{item.name}}">
           {{item.name}}
         </view>
@@ -21,38 +21,24 @@
     </view>
   </view>
 
-  <!-- 查询结果 -->
-  <view wx:if="{{result}}" class="result-area card">
-    <view class="result-title">{{result.drugName || drugName}}</view>
-    <view class="result-section">
-      <view class="section-label">药品类别</view>
-      <view class="section-content">{{result.category || '详见说明书'}}</view>
-    </view>
-    <view class="result-section">
-      <view class="section-label">注意事项</view>
-      <view class="section-content">{{result.precautions || '请遵医嘱用药'}}</view>
-    </view>
-    <view wx:if="{{result.interactions}}" class="result-section">
-      <view class="section-label">药物相互作用</view>
-      <view class="section-content">{{result.interactions}}</view>
-    </view>
-    <view wx:if="{{result.contraindications}}" class="result-section">
-      <view class="section-label">禁忌</view>
-      <view class="section-content">{{result.contraindications}}</view>
-    </view>
-    
-    <!-- 免责声明 -->
+  <!-- 查询结果（由康养智能体生成，含免责声明）-->
+  <view wx:if="{{answer}}" class="result-area card">
+    <view class="result-title">{{drugName}}</view>
+    <view class="result-body">{{answer}}</view>
+
     <view class="disclaimer">
       【免责声明】以上信息仅供参考，不能替代医师处方和用药指导。用药前请务必咨询医生或药师，切勿自行调整用药方案。
     </view>
+
+    <button class="btn-primary btn-large" bindtap="onAskMore">继续追问康养助手</button>
   </view>
 
-  <!-- 紧急提示 -->
+  <!-- 紧急提示（附件一 §6.5 紧急信号提醒）-->
   <view class="emergency-box">
     <view class="emergency-text">⚠️ 用药安全提示</view>
-    <view style="font-size: 30rpx; color: #666; margin-top: 8rpx;">
+    <view class="emergency-desc">
       出现药物不良反应，请立即停药并就医。
-      紧急情况请拨打120。
+      紧急情况请拨打 120；心理援助热线 400-161-9995；医保服务热线 12393。
     </view>
   </view>
 </view>

@@ -3,10 +3,10 @@ const app = getApp()
 Page({
   data: {
     drugName: '',
-    result: null,
+    answer: '',
     loading: false,
     elderlyMode: true,
-    emergencyDrugs: [
+    commonDrugs: [
       { name: '阿司匹林', category: '抗血小板' },
       { name: '硝酸甘油', category: '心绞痛急救' },
       { name: '氨氯地平', category: '降压药' },
@@ -24,19 +24,22 @@ Page({
     this.setData({ drugName: e.detail.value })
   },
 
+  /**
+   * 用药查询：走康养智能体对话接口（附件一 §6.2 用药指导工具）
+   */
   onSearch() {
     const drug = this.data.drugName.trim()
     if (!drug) {
       wx.showToast({ title: '请输入药品名称', icon: 'none' })
       return
     }
-    this.setData({ loading: true, result: null })
-    app.request({
-      url: '/help/medication/guide',
-      method: 'POST',
-      data: { drug }
-    }).then(res => {
-      this.setData({ result: res, loading: false })
+
+    this.setData({ loading: true, answer: '' })
+    app.sendChat(
+      `请介绍「${drug}」的用途、常见不良反应、与其他药物的相互作用和禁忌人群，并说明用药注意事项。`,
+      'elderly'
+    ).then((res) => {
+      this.setData({ answer: (res && res.content) || '暂时没有查到相关信息。', loading: false })
     }).catch(() => {
       this.setData({ loading: false })
       wx.showToast({ title: '查询失败，请稍后重试', icon: 'none' })
@@ -47,5 +50,12 @@ Page({
     const name = e.currentTarget.dataset.name
     this.setData({ drugName: name })
     this.onSearch()
+  },
+
+  /**
+   * 继续追问：跳转对话页
+   */
+  onAskMore() {
+    wx.navigateTo({ url: '/pages/chat/chat?type=medication' })
   }
 })

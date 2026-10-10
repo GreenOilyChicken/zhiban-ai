@@ -1,0 +1,41 @@
+<view class="container {{elderlyMode ? 'elderly-mode' : ''}}">
+  <view wx:if="{{loading}}" class="loading-state"><text>加载中...</text></view>
+
+  <block wx:elif="{{policy}}">
+    <view class="detail-card card">
+      <view class="detail-title">{{policy.title}}</view>
+
+      <view class="detail-meta">
+        <text wx:if="{{policy.docNumber}}" class="meta-item">文号：{{policy.docNumber}}</text>
+        <text wx:if="{{policy.issuingAuthority}}" class="meta-item">发文机关：{{policy.issuingAuthority}}</text>
+        <text wx:if="{{policy.publishDate}}" class="meta-item">发布日期：{{policy.publishDate}}</text>
+        <text wx:if="{{policy.effectiveDate}}" class="meta-item">生效日期：{{policy.effectiveDate}}</text>
+        <text wx:if="{{policy.region}}" class="meta-item">适用地区：{{policy.region}}</text>
+      </view>
+
+      <view wx:if="{{policy.summary}}" class="detail-section">
+        <view class="section-label">政策摘要</view>
+        <view class="section-body">{{policy.summary}}</view>
+      </view>
+
+      <view wx:if="{{policy.keyPoints && policy.keyPoints.length > 0}}" class="detail-section">
+        <view class="section-label">政策要点</view>
+        <view wx:for="{{policy.keyPoints}}" wx:key="index" class="point-item">· {{item}}</view>
+      </view>
+
+      <view wx:if="{{policy.fullText}}" class="detail-section">
+        <view class="section-label">政策全文</view>
+        <view class="section-body">{{policy.fullText}}</view>
+      </view>
+
+      <view class="source-note">信息来源：{{policy.issuingAuthority || '政务政策知识库'}}</view>
+    </view>
+
+    <button class="btn-primary ask-btn" bindtap="onAskAI">就这条政策问 AI 助手</button>
+  </block>
+
+  <view wx:else class="empty-state">
+    <view class="empty-icon">📋</view>
+    <view class="empty-text">未找到该政策</view>
+  </view>
+</view>

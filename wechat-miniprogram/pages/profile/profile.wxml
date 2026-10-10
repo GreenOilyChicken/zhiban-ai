@@ -32,6 +32,10 @@
         <text class="emergency-number">400-161-9995</text>
         <text class="emergency-label">心理援助</text>
       </view>
+      <view class="emergency-item" bindtap="onCallEmergency" data-phone="12393">
+        <text class="emergency-number">12393</text>
+        <text class="emergency-label">医保热线</text>
+      </view>
     </view>
   </view>
 </view>

@@ -79,7 +79,38 @@
   border-radius: 8rpx;
   padding: 24rpx;
   margin-top: 24rpx;
-  font-size: 30rpx;
+  /* 附件一 §5.2：适老化，正文不小于 32rpx */
+  font-size: 34rpx;
   color: #E65100;
   line-height: 1.6;
+}
+
+/* 智能体回答正文 */
+.result-body {
+  font-size: 38rpx;
+  color: #333;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+/* 紧急提示（附件一 §6.5 紧急信号提醒）*/
+.emergency-box {
+  margin: 24rpx 32rpx;
+  padding: 24rpx;
+  background: #FFEBEE;
+  border-left: 8rpx solid #E53935;
+  border-radius: 8rpx;
+}
+
+.emergency-text {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #C62828;
+}
+
+.emergency-desc {
+  font-size: 34rpx;
+  color: #8E2C2C;
+  line-height: 1.7;
+  margin-top: 8rpx;
 }

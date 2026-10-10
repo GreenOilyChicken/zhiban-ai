@@ -85,7 +85,47 @@
 }
 
 .tool-btn {
-  font-size: 32rpx;
+  /* 附件一 §5.2：适老化，字号不小于 32rpx（≈16px） */
+  font-size: 34rpx;
   color: #4A90D9;
   padding: 8rpx 32rpx;
+}
+
+/* 智能体切换栏（附件一 §3.4）*/
+.agent-bar {
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 20rpx;
+  background: #fff;
+  border-bottom: 2rpx solid #eee;
+}
+
+.agent-chip {
+  flex: 1;
+  text-align: center;
+  font-size: 34rpx;
+  padding: 16rpx 0;
+  border-radius: 40rpx;
+  background: #F5F5F5;
+  color: #666;
+}
+
+.agent-chip.active {
+  background: #4A90D9;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 大字模式：进一步放大（适老化）*/
+.elderly-mode .msg-bubble {
+  font-size: 42rpx;
+}
+
+.elderly-mode .input-box {
+  font-size: 44rpx;
+}
+
+.elderly-mode .tool-btn,
+.elderly-mode .agent-chip {
+  font-size: 38rpx;
 }

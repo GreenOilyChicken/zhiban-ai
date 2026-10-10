@@ -1,4 +1,15 @@
 <view class="container {{elderlyMode ? 'elderly-mode' : ''}}">
+  <!-- 智能体切换（附件一 §3.4：切换康养/政务/文旅智能体）-->
+  <view class="agent-bar">
+    <view
+      wx:for="{{agents}}"
+      wx:key="key"
+      class="agent-chip {{agentType === item.key ? 'active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onSwitchAgent"
+    >{{item.name}}</view>
+  </view>
+
   <!-- 消息列表 -->
   <scroll-view scroll-y class="msg-list" scroll-into-view="msg-{{messages.length}}">
     <block wx:for="{{messages}}" wx:key="index">
@@ -9,7 +20,7 @@
         </view>
       </view>
     </block>
-    
+
     <!-- 加载中 -->
     <view wx:if="{{loading}}" class="msg-row msg-bot">
       <view class="msg-avatar">🤖</view>
@@ -34,9 +45,10 @@
     <button class="btn-primary btn-send" bindtap="onSend" disabled="{{loading}}">发送</button>
   </view>
 
-  <!-- 功能栏 -->
+  <!-- 功能栏：语音输入 / 语音播报 / 清空 -->
   <view class="toolbar">
-    <view class="tool-btn" bindtap="onVoiceInput">🎤 语音</view>
+    <view class="tool-btn" bindtap="onVoiceInput">🎤 {{recording ? '停止' : '语音输入'}}</view>
+    <view class="tool-btn" bindtap="onToggleSpeak">{{speakEnabled ? '🔊 播报开' : '🔇 播报关'}}</view>
     <view class="tool-btn" bindtap="onClearChat">🗑 清空</view>
   </view>
 </view>

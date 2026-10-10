@@ -1,0 +1,27 @@
+<view class="container {{elderlyMode ? 'elderly-mode' : ''}}">
+  <view wx:if="{{loading}}" class="loading-state"><text>加载中...</text></view>
+
+  <block wx:elif="{{attraction}}">
+    <view class="detail-card card">
+      <view class="detail-name">🏞 {{attraction.name}}</view>
+      <view class="detail-body">{{attraction.summary}}</view>
+    </view>
+
+    <!-- 老年人出行提示（附件一 §6.5）-->
+    <view class="tip-box">
+      <view class="tip-title">👵 出行提示</view>
+      <view class="tip-item">· 建议避开正午高温时段，注意补水休息</view>
+      <view class="tip-item">· 随身携带常用药物和身份证（部分景点有老年优惠）</view>
+      <view class="tip-item">· 穿防滑舒适的鞋子，必要时使用无障碍通道</view>
+      <view class="tip-item">· 紧急情况请拨打 120</view>
+    </view>
+
+    <button class="btn-primary ask-btn" bindtap="onPlanRoute">帮我规划到这里的路线</button>
+    <button class="btn-outline emergency-btn" bindtap="onCallEmergency">拨打 120 急救</button>
+  </block>
+
+  <view wx:else class="empty-state">
+    <view class="empty-icon">🏞</view>
+    <view class="empty-text">未找到该景点</view>
+  </view>
+</view>

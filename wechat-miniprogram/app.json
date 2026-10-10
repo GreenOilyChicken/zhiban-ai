@@ -4,7 +4,9 @@
     "pages/chat/chat",
     "pages/medication/medication",
     "pages/policy/policy",
+    "pages/policy/detail/detail",
     "pages/tourism/tourism",
+    "pages/tourism/detail/detail",
     "pages/profile/profile"
   ],
   "window": {

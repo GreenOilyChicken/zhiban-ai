@@ -3,11 +3,12 @@ const app = getApp()
 Page({
   data: {
     tabs: [
-      { id: 'gov_service', name: '政务服务' },
-      { id: 'silver_economy', name: '银发经济' },
-      { id: 'culture_tourism', name: '文旅项目' }
+      { id: '', name: '全部' },
+      { id: '养老', name: '养老' },
+      { id: '旅游', name: '旅游' },
+      { id: '政务', name: '政务' }
     ],
-    activeTab: 'gov_service',
+    activeTab: '',
     policies: [],
     loading: false
   },
@@ -22,29 +23,34 @@ Page({
     this.loadPolicies()
   },
 
+  /**
+   * 政策列表（附件一 §3.5 GET /api/help/gov-policy）
+   */
   loadPolicies() {
     this.setData({ loading: true })
-    app.request({
-      url: '/help/gov-policy',
-      data: { category: this.data.activeTab, page: 1, size: 20 }
-    }).then(res => {
-      const policies = res.records || res.list || []
-      this.setData({ policies, loading: false })
-    }).catch(() => {
-      this.setData({ loading: false })
-    })
+    const params = { page: 1, size: 20 }
+    if (this.data.activeTab) {
+      params.policyType = this.data.activeTab
+    }
+
+    app.request({ url: '/help/gov-policy', data: params })
+      .then((res) => {
+        this.setData({ policies: (res && res.records) || [], loading: false })
+      })
+      .catch(() => {
+        this.setData({ loading: false })
+      })
   },
 
+  /**
+   * 政策详情（附件一 §3.5 GET /api/help/gov-policy/{id}）
+   */
   onPolicyTap(e) {
     const id = e.currentTarget.dataset.id
-    wx.navigateTo({
-      url: `/pages/policy/detail?id=${id}`
-    })
+    wx.navigateTo({ url: `/pages/policy/detail/detail?id=${id}` })
   },
 
   onAskAI() {
-    wx.navigateTo({
-      url: '/pages/chat/chat?type=policy'
-    })
+    wx.navigateTo({ url: '/pages/chat/chat?type=policy' })
   }
 })
