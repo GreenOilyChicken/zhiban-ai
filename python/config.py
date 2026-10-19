@@ -71,7 +71,12 @@ LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 2048)
 #   bge    —— 生产默认，BGE 中文语义向量（需 sentence-transformers + 本地模型）
 #   hash   —— 离线兜底，确定性哈希向量，仅用于无网络/无模型环境的链路验证
 EMBEDDING_PROVIDER = _env("EMBEDDING_PROVIDER", "bge").lower()
-BGE_MODEL_NAME = _env("BGE_MODEL_NAME", "BAAI/bge-small-zh-v1.5")
+# 默认指向随项目分发的本地模型目录（客户环境无外网，不能依赖 HuggingFace 下载）。
+# 容器内路径为 /app/models/bge-small-zh-v1.5，本地开发为 <repo>/python/models/...
+# 如需改用其他模型（如 bge-m3），设置环境变量 BGE_MODEL_NAME 即可，
+# 可传本地目录路径，也可传 HuggingFace repo id（需可联网下载）。
+BGE_MODEL_DIR = _env_path("BGE_MODEL_DIR", PROJECT_ROOT / "models" / "bge-small-zh-v1.5")
+BGE_MODEL_NAME = _env("BGE_MODEL_NAME", str(BGE_MODEL_DIR))
 EMBEDDING_DEVICE = _env("EMBEDDING_DEVICE", "cpu")
 # 离线兜底向量的维度（仅 hash provider 使用）
 HASH_EMBEDDING_DIM = _env_int("HASH_EMBEDDING_DIM", 512)

@@ -11,6 +11,9 @@ htmlcov/
 knowledge_base/chroma_db/
 knowledge_base/data/
 
+# BGE 模型文件（约 95MB，不进 git；交付时随 Docker 镜像分发）
+models/
+
 # 输出
 output/
 

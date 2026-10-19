@@ -50,6 +50,10 @@ python/.pylibs/
 .pip-install.log
 python/knowledge_base/chroma_db/
 
+# ── BGE 模型文件（约 95MB，不进 git 历史）─────
+# 模型需单独交付并置于 python/models/，Docker 构建时随镜像分发
+python/models/
+
 # ── 本地构建工具 ──────────────────
 .tools/
 java-backend/src/test/resources/schema-h2.sql

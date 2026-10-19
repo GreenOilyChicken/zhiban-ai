@@ -105,24 +105,46 @@ class ModelFactory:
         provider = getattr(config, "EMBEDDING_PROVIDER", "bge")
 
         if provider == "hash":
-            from base.hash_embeddings import HashEmbeddings
-            cls._embeddings = HashEmbeddings(dim=getattr(config, "HASH_EMBEDDING_DIM", 512))
-            logger.warning(
-                "Embeddings 使用离线兜底实现（hash, dim=%d）：仅用于链路验证，"
-                "生产环境请设置 EMBEDDING_PROVIDER=bge",
-                getattr(config, "HASH_EMBEDDING_DIM", 512),
+            return cls._build_hash_embeddings()
+
+        try:
+            from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+        except Exception as exc:
+            logger.error(
+                "BGE 依赖缺失（%s: %s），已降级为 hash 兜底向量，检索质量将显著下降。"
+                "生产环境请确认镜像内已安装 sentence-transformers 与 torch。",
+                type(exc).__name__, exc,
             )
-            return cls._embeddings
+            return cls._build_hash_embeddings()
 
-        from langchain_community.embeddings import HuggingFaceBgeEmbeddings
-
-        cls._embeddings = HuggingFaceBgeEmbeddings(
-            model_name=config.BGE_MODEL_NAME,
-            model_kwargs={"device": config.EMBEDDING_DEVICE},
-            encode_kwargs={"normalize_embeddings": True},
-        )
+        try:
+            cls._embeddings = HuggingFaceBgeEmbeddings(
+                model_name=config.BGE_MODEL_NAME,
+                model_kwargs={"device": config.EMBEDDING_DEVICE},
+                encode_kwargs={"normalize_embeddings": True},
+            )
+        except Exception as exc:
+            logger.error(
+                "BGE 模型加载失败（%s: %s），已降级为 hash 兜底向量，检索质量将显著下降。"
+                "请检查模型目录 %s 是否随镜像分发（客户环境无外网，不能依赖在线下载）。",
+                type(exc).__name__, exc, getattr(config, "BGE_MODEL_DIR", "?"),
+            )
+            return cls._build_hash_embeddings()
 
         logger.info(f"Embeddings 已初始化: model={config.BGE_MODEL_NAME}")
+        return cls._embeddings
+
+    @classmethod
+    def _build_hash_embeddings(cls):
+        """构造 hash 兜底向量（无外部依赖，仅保证链路可用）"""
+        from base.hash_embeddings import HashEmbeddings
+
+        cls._embeddings = HashEmbeddings(dim=getattr(config, "HASH_EMBEDDING_DIM", 512))
+        logger.warning(
+            "Embeddings 使用离线兜底实现（hash, dim=%d）：仅用于链路验证，"
+            "生产环境请设置 EMBEDDING_PROVIDER=bge 并提供模型文件",
+            getattr(config, "HASH_EMBEDDING_DIM", 512),
+        )
         return cls._embeddings
 
     @classmethod

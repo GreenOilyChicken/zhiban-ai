@@ -80,9 +80,10 @@ services:
       LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.3}
       LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-2048}
       # Embedding 配置
-      # 生产用 bge（需下载模型）；离线环境可设 hash 做链路验证
+      # 生产用 bge：模型文件随镜像分发（客户环境无外网，不能在线下载）。
+      # BGE_MODEL_DIR 指向容器内路径；如需更换模型（如 bge-m3）改此变量即可。
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-bge}
-      BGE_MODEL_NAME: ${BGE_MODEL_NAME:-BAAI/bge-small-zh-v1.5}
+      BGE_MODEL_DIR: ${BGE_MODEL_DIR:-/app/models/bge-small-zh-v1.5}
       EMBEDDING_DEVICE: ${EMBEDDING_DEVICE:-cpu}
       # 语音（TTS/ASR）：留空走内置 edge-tts / whisper
       ALIYUN_ACCESS_KEY_ID: ${ALIYUN_ACCESS_KEY_ID:-}

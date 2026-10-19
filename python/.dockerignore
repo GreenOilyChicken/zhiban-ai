@@ -8,3 +8,8 @@ knowledge_base/chroma_db/
 output/
 *.egg-info/
 .pytest_cache/
+# 开发机本地依赖目录：为 cp313 Linux wheel，与镜像 python:3.11-slim 不兼容，
+# 且与 requirements.lock.txt 安装的包重复。镜像依赖一律由 lock 文件安装。
+.pylibs/
+# 注意：models/ 不排除 —— 客户环境无外网，BGE 模型必须随镜像分发
+# （git 中通过 .gitignore 排除，避免二进制入库）

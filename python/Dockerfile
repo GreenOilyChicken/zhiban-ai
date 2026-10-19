@@ -11,6 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # 优先使用锁定版本，保证可复现构建
 COPY requirements.txt requirements.lock.txt ./
+
+# torch 只装 CPU 变体：默认 PyPI 源会拉入 2GB+ 的 CUDA/nvidia 依赖，
+# 而本服务仅在 CPU 上做 embedding 推理，无需 GPU 支持。
+RUN pip install --no-cache-dir --user torch==2.4.1 \
+    --index-url https://download.pytorch.org/whl/cpu
+
 RUN pip install --no-cache-dir --user -r requirements.lock.txt
 
 # ── 运行阶段 ──────────────────────────────

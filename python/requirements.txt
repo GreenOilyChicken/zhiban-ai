@@ -26,7 +26,9 @@ lxml>=4.9.0
 python-dotenv>=1.0.0
 
 # 数值计算
-numpy>=1.24,<2.0
+# 注意：需 >=2.0 —— chromadb 1.0.20 与 sentence-transformers 3.x 均要求 numpy 2.x。
+# 早期 <2.0 的上限约束会导致 pip 降级 numpy 而破坏 chromadb。
+numpy>=2.0
 
 # 安全加密（长护险未来对接）
 cryptography>=41.0.0

@@ -276,12 +276,31 @@ async def upload_kb_document(
 
 @app.get("/api/v1/health")
 def health_check():
-    """健康检查"""
+    """健康检查
+
+    embeddingProvider 字段用于运维确认 embedding 实际实现：
+      - bge  ：本地 BGE 语义模型（生产期望值）
+      - hash ：离线兜底向量（模型缺失或依赖缺失时自动降级，检索质量差）
+    出现 hash 时应排查 python/models/ 目录与 sentence-transformers/torch 安装情况。
+    """
+    from base.model_factory import ModelFactory
+
+    try:
+        embeddings = ModelFactory.get_embeddings()
+        embedding_provider = "bge" if type(embeddings).__name__ != "HashEmbeddings" else "hash"
+        embedding_dim = getattr(embeddings, "dim", None)
+    except Exception as exc:  # 健康检查不应因 embedding 探测失败而 500
+        logger.warning("embedding 探测失败: %s", exc)
+        embedding_provider = "unknown"
+        embedding_dim = None
+
     return {
         "status": "ok",
         "service": "zhiban-ai-agent",
         "version": "1.1.0",
         "llmProvider": config.LLM_PROVIDER,
+        "embeddingProvider": embedding_provider,
+        "embeddingDim": embedding_dim,
         "collections": list(COLLECTION_MAP.keys()),
         "loaded": list(_vectordbs.keys()),
     }
@@ -455,7 +474,10 @@ def _to_chat_history(history: Optional[list]):
         return []
     try:
         from langchain_core.messages import AIMessage, HumanMessage
-    except Exception:
+    except Exception as exc:
+        # langchain_core 是核心依赖，导入失败意味着环境损坏。
+        # 不能静默返回空列表——那会让多轮上下文无声消失，表现为「AI 失忆」且难以排查。
+        logger.error("langchain_core 导入失败，多轮对话上下文将丢失: %s", exc, exc_info=True)
         return []
 
     messages = []
