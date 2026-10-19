@@ -4,7 +4,7 @@
     <header class="header">
       <div class="header-inner">
         <div class="logo" @click="$router.push('/')">
-          <el-icon size="24" color="#409EFF"><ChatDotRound /></el-icon>
+          <el-icon size="24" color="var(--zb-accent)"><ChatDotRound /></el-icon>
           <span class="logo-text">知伴AI · 帮助中心</span>
         </div>
         <nav class="nav-links">
@@ -175,6 +175,7 @@ import {
   askPolicy,
   getQuota
 } from '@/api/help'
+import { getToken } from '@/api/index'
 import QuotaBar from '@/components/QuotaBar.vue'
 
 const route = useRoute()
@@ -229,7 +230,11 @@ async function loadTabData(tabName) {
     await loadGovPolicies()
   } else if (tabName === 'silver') {
     await loadSilverPolicies()
-    await loadQuota()
+    // 配额接口需登录（/help/quota 走 anyRequest().authenticated()）。
+    // 游客进入 silver tab 时不调用，避免触发 403「无权限访问」阻断式提示。
+    if (getToken()) {
+      await loadQuota()
+    }
   } else if (tabName === 'tourism') {
     await loadArticles()
     await loadFaq()
@@ -239,8 +244,8 @@ async function loadTabData(tabName) {
 async function loadGovPolicies() {
   loading.gov = true
   try {
-    const res = await getGovPolicies({ page: 0, size: 5 })
-    policies.value = res.data?.content || res.data || []
+    const res = await getGovPolicies({ page: 1, size: 5 })
+    policies.value = res.data?.records || res.data?.content || []
   } catch {
     // 错误已由拦截器处理
   } finally {
@@ -251,8 +256,8 @@ async function loadGovPolicies() {
 async function loadSilverPolicies() {
   loading.silver = true
   try {
-    const res = await getGovPolicies({ page: 0, size: 10, category: '银发经济' })
-    silverPolicies.value = res.data?.content || res.data || []
+    const res = await getGovPolicies({ page: 1, size: 10, category: '银发经济' })
+    silverPolicies.value = res.data?.records || res.data?.content || []
   } catch {
     // 错误已由拦截器处理
   } finally {
@@ -263,8 +268,8 @@ async function loadSilverPolicies() {
 async function loadArticles() {
   loading.tourism = true
   try {
-    const res = await getArticles({ page: 0, size: 5 })
-    articles.value = res.data?.content || res.data || []
+    const res = await getArticles({ page: 1, size: 5 })
+    articles.value = res.data?.records || res.data?.content || []
   } catch {
     // 错误已由拦截器处理
   } finally {
@@ -319,20 +324,22 @@ function viewPolicyDetail(row) {
 <style scoped>
 .help-center {
   min-height: 100vh;
+  background: var(--zb-bg);
 }
 
 .header {
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: var(--zb-surface);
+  border-bottom: 1px solid var(--zb-border);
+  box-shadow: var(--zb-shadow-xs);
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
 .header-inner {
-  max-width: 1200px;
+  max-width: var(--zb-container);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--zb-space-6);
   height: 60px;
   display: flex;
   align-items: center;
@@ -342,25 +349,29 @@ function viewPolicyDetail(row) {
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--zb-space-2);
   cursor: pointer;
 }
 
 .logo-text {
   font-size: 18px;
   font-weight: 700;
+  color: var(--zb-text);
+  letter-spacing: 0.02em;
 }
 
 .content {
-  max-width: 1200px;
+  max-width: var(--zb-container);
   margin: 0 auto;
-  padding: 24px;
+  padding: var(--zb-space-6);
 }
 
 .main-tabs {
-  background: #fff;
-  border-radius: 8px;
-  padding: 0 24px 24px;
+  background: var(--zb-surface);
+  border: 1px solid var(--zb-border);
+  border-radius: var(--zb-radius-lg);
+  padding: var(--zb-space-2) var(--zb-space-6) var(--zb-space-6);
+  box-shadow: var(--zb-shadow-sm);
 }
 
 .card-header {
@@ -370,25 +381,25 @@ function viewPolicyDetail(row) {
 }
 
 .qa-hint {
-  color: #909399;
+  color: var(--zb-text-3);
   font-size: 14px;
-  margin-bottom: 12px;
+  margin-bottom: var(--zb-space-3);
 }
 
 .qa-btn {
-  margin-top: 12px;
+  margin-top: var(--zb-space-3);
   width: 100%;
 }
 
 .qa-answer {
-  margin-top: 16px;
+  margin-top: var(--zb-space-4);
 }
 
 .quota-card {
-  margin-top: 20px;
+  margin-top: var(--zb-space-5);
 }
 
 .tab-placeholder {
-  padding: 20px 0;
+  padding: var(--zb-space-5) 0;
 }
 </style>

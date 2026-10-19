@@ -36,10 +36,16 @@ public class User {
     private String password;
 
     /**
-     * 手机号
+     * 手机号（AES-256-GCM 加密存储，附件一 §8.1）
      */
     @TableField("phone")
     private String phone;
+
+    /**
+     * 手机号盲索引（HMAC-SHA256），用于加密后的等值查询
+     */
+    @TableField("phone_hash")
+    private String phoneHash;
 
     /**
      * 角色: USER / ADMIN

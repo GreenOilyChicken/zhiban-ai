@@ -91,6 +91,25 @@
   padding: 8rpx 32rpx;
 }
 
+/* 弱网/离线提示条（附件一 §5.2）*/
+.offline-bar {
+  background: #FFF4E5;
+  color: #B25E00;
+  border-bottom: 2rpx solid #FFD8A8;
+  padding: 18rpx 24rpx;
+  font-size: 34rpx;
+  text-align: center;
+}
+
+.elderly-mode .offline-bar {
+  font-size: 38rpx;
+}
+
+.btn-send[disabled] {
+  background: #C8C8C8;
+  color: #fff;
+}
+
 /* 智能体切换栏（附件一 §3.4）*/
 .agent-bar {
   display: flex;

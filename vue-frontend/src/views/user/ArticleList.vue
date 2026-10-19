@@ -85,13 +85,13 @@ async function loadArticles() {
   loading.value = true
   try {
     const params = {
-      page: currentPage.value - 1,
+      page: currentPage.value,
       size: pageSize.value
     }
     if (searchKeyword.value) params.keyword = searchKeyword.value
 
     const res = await getArticles(params)
-    articles.value = res.data?.content || res.data?.records || []
+    articles.value = res.data?.records || res.data?.content || []
     total.value = res.data?.totalElements || res.data?.total || 0
   } catch {
     // 错误已由拦截器处理

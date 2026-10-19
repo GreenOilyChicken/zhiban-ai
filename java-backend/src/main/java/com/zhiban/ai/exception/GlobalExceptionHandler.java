@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.stream.Collectors;
 
@@ -90,6 +91,22 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining("; "));
         log.warn("约束校验失败: {}", message);
         return Result.error(400, message);
+    }
+
+    /**
+     * 其他未捕获异常
+     */
+    /**
+     * 上传文件超过大小限制
+     *
+     * Spring 默认会落到兜底的 Exception 处理器返回 500，
+     * 但按附件一 §3.6 错误码体系，参数类问题应为 400。
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
+        log.warn("上传文件超过大小限制: {}", e.getMessage());
+        return Result.error(400, "上传文件过大，请压缩后重试");
     }
 
     /**

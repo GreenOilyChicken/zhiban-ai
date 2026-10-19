@@ -75,6 +75,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(BEARER_PREFIX.length());
         }
+        // 回退：EventSource / audio.src / InnerAudioContext 无法设置请求头，
+        // 允许通过查询参数传递 JWT（附件一 §3.6 SSE 兼容 EventSource）
+        for (String param : new String[]{"token", "access_token"}) {
+            String value = request.getParameter(param);
+            if (StringUtils.hasText(value)) {
+                return value;
+            }
+        }
         return null;
     }
 }

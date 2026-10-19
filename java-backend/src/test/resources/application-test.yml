@@ -19,6 +19,12 @@ jwt:
   secret: test-secret-key-for-integration-tests-32bytes-min
   expiration: 86400000
 
+# 手机号加密（附件一 §8.1）：测试环境使用固定口令，保证可复现
+security:
+  phone:
+    encryption-key: test-phone-encryption-passphrase
+    blind-index-key: test-phone-blind-index-passphrase
+
 ai-service:
   base-url: http://localhost:8081
   # 大模型生成较慢，联调测试需较长超时

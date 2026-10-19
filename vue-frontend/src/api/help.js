@@ -67,10 +67,49 @@ export function getQuota(quotaType = 'POLICY_QA') {
   return request.get('/help/quota', { params: { quotaType } })
 }
 
+// ==================== 管理端配额（附件一 §4.2 查看与调整）====================
+
+// 查询配额列表（可按用户、类型过滤）
+export function listQuotas(params) {
+  return request.get('/admin/quota', { params })
+}
+
+// 调整指定用户指定类型的配额
+export function adjustQuota(userId, quotaType, data) {
+  return request.put(`/admin/quota/${userId}/${quotaType}`, data)
+}
+
+// ==================== 管理端知识库（附件一 §4.2 上传与同步）====================
+
+// 上传知识库文档并同步索引
+export function uploadKbDocument(file, collection = 'govpolicy', rebuild = true) {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('collection', collection)
+  formData.append('rebuild', String(rebuild))
+  return request.post('/admin/kb/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 300000
+  })
+}
+
+// 同步（重建）指定集合的知识库索引
+export function syncKnowledgeBase(collection = 'govpolicy', rebuild = true) {
+  return request.post('/admin/kb/sync', null, {
+    params: { collection, rebuild },
+    timeout: 300000
+  })
+}
+
+// 相关推荐文章（附件一 §4.1 文章详情）
+export function getRelatedArticles(id, limit = 5) {
+  return request.get(`/articles/${id}/related`, { params: { limit } })
+}
+
 // ==================== 分类 ====================
 
-export function getCategories() {
-  return request.get('/help/categories')
+export function getCategories(type) {
+  return request.get('/help/categories', { params: type ? { type } : {} })
 }
 
 // 政策详情（附件一 §3.5）

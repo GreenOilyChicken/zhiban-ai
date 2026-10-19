@@ -48,6 +48,11 @@ public class AiServiceConfig {
     private String buildPath = "/api/v1/build";
 
     /**
+     * 知识库文档上传接口路径（附件一 §4.2 政策管理「文档上传」）
+     */
+    private String kbUploadPath = "/api/v1/kb/upload";
+
+    /**
      * TTS 接口路径
      */
     private String ttsPath = "/api/v1/tts";

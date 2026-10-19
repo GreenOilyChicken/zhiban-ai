@@ -10,6 +10,11 @@
     >{{item.name}}</view>
   </view>
 
+  <!-- 弱网/离线提示条（附件一 §5.2：弱网环境下友好提示）-->
+  <view wx:if="{{offlineNotice}}" class="offline-bar" bindtap="onRetryNetwork">
+    <text>⚠️ {{offlineNotice}}（点击重试）</text>
+  </view>
+
   <!-- 消息列表 -->
   <scroll-view scroll-y class="msg-list" scroll-into-view="msg-{{messages.length}}">
     <block wx:for="{{messages}}" wx:key="index">
@@ -35,14 +40,15 @@
     <view class="input-left">
       <input
         class="input-box"
-        placeholder="请输入您的问题"
+        placeholder="{{online ? '请输入您的问题' : '当前离线，可查看本地缓存对话'}}"
         value="{{inputText}}"
+        disabled="{{!online}}"
         bindinput="onInput"
         bindconfirm="onSend"
         confirm-type="send"
       />
     </view>
-    <button class="btn-primary btn-send" bindtap="onSend" disabled="{{loading}}">发送</button>
+    <button class="btn-primary btn-send" bindtap="onSend" disabled="{{loading || !online}}">{{online ? '发送' : '离线'}}</button>
   </view>
 
   <!-- 功能栏：语音输入 / 语音播报 / 清空 -->

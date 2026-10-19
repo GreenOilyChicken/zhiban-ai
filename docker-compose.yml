@@ -12,6 +12,14 @@
 #   Java 后端     : http://localhost:8080
 #   Python RAG    : http://localhost:8081
 #   MySQL         : localhost:3306
+#
+# ── HTTPS / TLS（可选，生产必需）─────────────────────────
+# 本文件默认只监听 80（HTTP），无需证书即可启动，适合开发环境。
+# 需要 443/TLS 时，叠加 docker-compose.https.yml（附件一 §9.2 / §10.3）：
+#   1) bash scripts/gen-self-signed-cert.sh -d your-domain.com
+#      （生产请改用 Let's Encrypt / 商业证书，见 DEPLOYMENT.md §11）
+#   2) docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+# 详细说明见 DEPLOYMENT.md §11「HTTPS / TLS 部署」。
 # ═══════════════════════════════════════════════════════
 
 version: "3.8"
@@ -132,6 +140,10 @@ services:
       # 安全：不提供默认值，未注入即启动失败（避免弱口令上线）
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 必须通过 .env.docker 注入}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 必须通过 .env.docker 注入}
+      # 敏感数据加密（附件一 §8.1：手机号须加密存储）
+      # 留空则退化为明文并打印告警；生产环境务必注入
+      PHONE_ENC_KEY: ${PHONE_ENC_KEY:-}
+      PHONE_INDEX_KEY: ${PHONE_INDEX_KEY:-}
       # Python AI 智能体服务（附件一 §2.1 AI 层独立部署）
       AI_SERVICE_URL: http://python-ai:8081
       AI_SERVICE_API_KEY: ${RAG_API_KEY:-}

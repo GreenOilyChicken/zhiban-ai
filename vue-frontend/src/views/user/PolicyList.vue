@@ -132,14 +132,14 @@ async function loadPolicies() {
   loading.value = true
   try {
     const params = {
-      page: currentPage.value - 1,
+      page: currentPage.value,
       size: pageSize.value
     }
     if (selectedCategory.value) params.category = selectedCategory.value
     if (searchKeyword.value) params.keyword = searchKeyword.value
 
     const res = await getGovPolicies(params)
-    policies.value = res.data?.content || res.data?.records || []
+    policies.value = res.data?.records || res.data?.content || []
     total.value = res.data?.totalElements || res.data?.total || 0
   } catch {
     // 错误已由拦截器处理

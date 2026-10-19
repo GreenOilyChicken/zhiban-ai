@@ -21,7 +21,7 @@ public interface UserMapper extends BaseMapper<User> {
      * @return 用户实体
      */
     @Select("""
-        SELECT id, username, password, phone, role, avatar, create_time, update_time
+        SELECT id, username, password, phone, phone_hash, role, avatar, create_time, update_time
         FROM user
         WHERE username = #{username} AND deleted = 0
         """)
@@ -41,16 +41,19 @@ public interface UserMapper extends BaseMapper<User> {
     int countByUsername(@Param("username") String username);
 
     /**
-     * 根据手机号查询用户（用于手机号登录）
+     * 根据手机号盲索引查询用户（用于手机号登录）
      *
-     * @param phone 手机号
+     * 附件一 §8.1：手机号加密存储后无法按明文等值查询，
+     * 因此使用 HMAC 盲索引 phone_hash 做等值匹配。
+     *
+     * @param phoneHash 手机号盲索引
      * @return 用户实体
      */
     @Select("""
-        SELECT id, username, password, phone, role, avatar, create_time, update_time
+        SELECT id, username, password, phone, phone_hash, role, avatar, create_time, update_time
         FROM user
-        WHERE phone = #{phone} AND deleted = 0
+        WHERE phone_hash = #{phoneHash} AND deleted = 0
         LIMIT 1
         """)
-    User selectByPhone(@Param("phone") String phone);
+    User selectByPhoneHash(@Param("phoneHash") String phoneHash);
 }

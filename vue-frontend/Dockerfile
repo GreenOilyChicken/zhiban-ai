@@ -20,10 +20,11 @@ LABEL description="知伴AI Vue.js前端 + Nginx"
 # 复制构建产物
 COPY --from=builder /build/dist /usr/share/nginx/html
 
-# 复制 Nginx 配置
+# 复制 Nginx 配置（默认 HTTP-only；HTTPS 由 docker-compose.https.yml 覆盖挂载）
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# 80: HTTP（默认）；443: HTTPS（可选，叠加 docker-compose.https.yml 时启用）
+EXPOSE 80 443
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD wget -q -O /dev/null http://localhost/ || exit 1

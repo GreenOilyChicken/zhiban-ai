@@ -34,6 +34,15 @@ public interface HelpCenterService {
     HelpArticleVO getArticleById(Long id);
 
     /**
+     * 获取相关推荐文章（附件一 §4.1 文章详情「相关推荐」）
+     *
+     * @param id    当前文章ID
+     * @param limit 返回条数上限
+     * @return 相关文章列表（不含当前文章）
+     */
+    List<HelpArticleVO> getRelatedArticles(Long id, int limit);
+
+    /**
      * 创建帮助文章（管理员）
      */
     Long createArticle(HelpArticleRequest request);
@@ -101,6 +110,28 @@ public interface HelpCenterService {
      * 原子扣减配额（内部调用）
      */
     boolean deductQuota(Long userId, String quotaType);
+
+    /**
+     * 查询配额列表（管理端，附件一 §4.2 配额管理）
+     *
+     * @param userId    用户ID（可选）
+     * @param quotaType 配额类型（可选）
+     * @return 配额列表
+     */
+    List<QuotaVO> listQuotas(Long userId, String quotaType);
+
+    /**
+     * 调整用户配额（管理端，附件一 §4.2 配额管理「查看与调整」）
+     *
+     * @param userId      用户ID
+     * @param quotaType   配额类型
+     * @param totalAmount 新的总配额（null 表示不修改）
+     * @param usedAmount  新的已用配额（null 表示不修改）
+     * @param freeAmount  新的免费配额（null 表示不修改）
+     * @return 调整后的配额
+     */
+    QuotaVO adjustQuota(Long userId, String quotaType,
+                        Integer totalAmount, Integer usedAmount, Integer freeAmount);
 
     // ==================== 分类 ====================
 

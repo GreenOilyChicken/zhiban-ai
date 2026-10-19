@@ -124,6 +124,29 @@ _split_documents = _split
 
 # ── 向量库检查 ────────────────────────────────────────────
 
+def _release_chroma_system_cache() -> None:
+    """
+    释放 ChromaDB 的进程级 System 缓存。
+
+    背景（重要）：
+        ChromaDB 1.x 以「持久化目录」为 key 在进程内缓存 System/Client 实例。
+        全量重建时会 rmtree 掉整个持久化目录，但缓存里仍持有指向
+        已删除 sqlite3 文件的旧句柄；再次 from_documents 时会复用该句柄，
+        表现为：
+            InternalError: attempt to write a readonly database (code 1032)
+        即「第二次重建必定失败」。
+
+    因此重建前必须清空该缓存，强制 Chroma 重新打开（新建）数据库文件。
+    该函数对旧版本 ChromaDB 做了兼容处理，失败时仅告警不中断。
+    """
+    try:
+        from chromadb.api.shared_system_client import SharedSystemClient
+        SharedSystemClient.clear_system_cache()
+        logger.debug("已清空 ChromaDB System 缓存")
+    except Exception as e:  # pragma: no cover - 兼容不同 chromadb 版本
+        logger.warning(f"清空 ChromaDB System 缓存失败（可忽略）: {e}")
+
+
 def _collection_has_data(persist_dir: str | Path) -> bool:
     """检查持久化目录是否已有 ChromaDB 数据"""
     persist_dir = Path(persist_dir)
@@ -184,6 +207,7 @@ def build_knowledge_base(
     # 全量重建：删除旧的持久化目录
     if rebuild and persist_path.exists():
         logger.info(f"重建知识库，清理旧数据: {persist_path}")
+        _release_chroma_system_cache()
         shutil.rmtree(persist_path, ignore_errors=True)
 
     if docs_path is None:
@@ -332,6 +356,80 @@ def query_knowledge_base(
         else:
             logger.warning("向量库不支持检索方法")
             return []
+    except Exception as e:
+        logger.warning(f"知识库检索失败: {e}")
+        return []
+
+
+def query_knowledge_base_with_scores(
+    query: str,
+    top_k: int = _DEFAULT_TOP_K,
+    vectordb: Any = None,
+    collection_name: str = _DEFAULT_COLLECTION,
+    persist_dir: str | Path = None,
+    chroma_dir: str | Path = None,
+) -> List[tuple]:
+    """
+    检索知识库并同时返回相似度分数
+
+    为什么需要这个函数：
+        query_knowledge_base 只返回 Document，分数在内部被丢弃，
+        导致上层（rag_server → Java）拿不到相似度，只能取到默认值 0.0，
+        进而使「按分数阈值过滤」永远不通过、静默降级为关键词检索。
+
+    分数语义（重要）：
+        ChromaDB 的 similarity_search_with_score 返回的是**距离**（越小越相似）。
+        本项目 Embedding 使用 normalize_embeddings=True，
+        因此可用 L2 距离换算余弦相似度：  cos = 1 - d² / 2
+        统一转换为「相似度」后返回（越大越相似，范围约 [0, 1]）。
+
+    Returns:
+        [(Document, similarity_float), ...]；失败或无结果时返回 []
+    """
+    if not query or not query.strip():
+        return []
+
+    query = query.strip()
+    if len(query) > _MAX_QUERY_LEN:
+        query = query[:_MAX_QUERY_LEN]
+        logger.warning(f"查询过长，已截断至 {_MAX_QUERY_LEN} 字符")
+
+    if vectordb is None:
+        try:
+            vectordb = load_knowledge_base(
+                collection_name=collection_name,
+                persist_dir=persist_dir,
+                chroma_dir=chroma_dir,
+            )
+        except Exception as e:
+            logger.warning(f"加载向量库失败: {e}")
+            return []
+
+    if vectordb is None:
+        return []
+
+    try:
+        if hasattr(vectordb, "similarity_search_with_score"):
+            pairs = list(vectordb.similarity_search_with_score(query, k=top_k))
+            out: List[tuple] = []
+            for doc, distance in pairs:
+                try:
+                    d = float(distance)
+                except (TypeError, ValueError):
+                    d = 0.0
+                # L2 距离 -> 余弦相似度（归一化向量下成立）
+                similarity = 1.0 - (d * d) / 2.0
+                # 裁剪到 [0, 1]，避免负值造成下游困惑
+                similarity = max(0.0, min(1.0, similarity))
+                out.append((doc, similarity))
+            return out
+
+        if hasattr(vectordb, "similarity_search"):
+            # 无分数接口时退化为不带分数（相似度置 0）
+            return [(doc, 0.0) for doc in vectordb.similarity_search(query, k=top_k)]
+
+        logger.warning("向量库不支持检索方法")
+        return []
     except Exception as e:
         logger.warning(f"知识库检索失败: {e}")
         return []

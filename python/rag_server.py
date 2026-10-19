@@ -21,7 +21,7 @@ import threading
 from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
@@ -30,6 +30,7 @@ from knowledge_base.build_kb import (
     build_knowledge_base,
     load_knowledge_base,
     query_knowledge_base,
+    query_knowledge_base_with_scores,
     _collection_has_data,
 )
 
@@ -170,6 +171,109 @@ class ChatResponse(BaseModel):
 
 # ── API 端点 ─────────────────────────────────────────────
 
+# 允许上传的知识库文档扩展名（与 build_kb 加载规则一致）
+_UPLOAD_ALLOWED_SUFFIXES = {".txt", ".md", ".markdown"}
+
+# 单文件大小上限：5MB（防止超大文件撑爆向量库）
+_UPLOAD_MAX_BYTES = 5 * 1024 * 1024
+
+
+@app.post("/api/v1/kb/upload", response_model=BuildResponse)
+async def upload_kb_document(
+    file: UploadFile = File(...),
+    collection: str = Form(config.COLLECTION_GOVPOLICY),
+    rebuild: bool = Form(True),
+):
+    """
+    上传知识库文档（附件一 §4.2 政策管理「文档上传、知识库同步」）
+
+    表单:
+        file       : 文档文件（.txt / .md）
+        collection : 目标集合（govpolicy / elderly / tourism）
+        rebuild    : 上传后是否立即重建索引，默认 true
+
+    注意：collection / rebuild 必须用 Form(...) 声明。
+    若声明为普通默认参数，FastAPI 会将其视为 query 参数，
+    multipart 表单里同名字段会被静默忽略（曾导致文件落入错误集合）。
+
+    说明：文件落盘到该集合的源文档目录，再按需重建向量索引。
+    """
+    collection = _normalize_collection(collection)
+    if collection not in COLLECTION_MAP:
+        raise HTTPException(status_code=400, detail=f"未知集合: {collection}")
+
+    filename = Path(file.filename or "").name  # 去除路径成分，防目录穿越
+    if not filename:
+        raise HTTPException(status_code=400, detail="文件名不能为空")
+
+    suffix = Path(filename).suffix.lower()
+    if suffix not in _UPLOAD_ALLOWED_SUFFIXES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"不支持的文件类型: {suffix}，仅支持 {sorted(_UPLOAD_ALLOWED_SUFFIXES)}",
+        )
+
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="文件内容为空")
+    if len(data) > _UPLOAD_MAX_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"文件过大（{len(data)} 字节），上限 {_UPLOAD_MAX_BYTES} 字节",
+        )
+
+    # 校验为 UTF-8 文本
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="文件必须为 UTF-8 编码的文本")
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="文件无有效文本内容")
+
+    doc_dir = _doc_dir_for(collection)
+    try:
+        doc_dir.mkdir(parents=True, exist_ok=True)
+        target = doc_dir / filename
+        # 二次确认：目标必须仍在该集合目录内
+        if doc_dir.resolve() not in target.resolve().parents:
+            raise HTTPException(status_code=400, detail="非法文件名")
+        target.write_bytes(data)
+        logger.info("知识库文档已上传: collection=%s, file=%s, bytes=%d",
+                    collection, target, len(data))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("保存上传文档失败: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"保存文件失败: {e}")
+
+    if not rebuild:
+        return BuildResponse(
+            success=True,
+            message=f"文件已上传: {filename}（未重建索引）",
+            collection=collection,
+        )
+
+    # 重建索引
+    persist_dir = config.KB_CHROMA_DIR / collection
+    try:
+        build_knowledge_base(
+            docs_dir=doc_dir,
+            collection_name=collection,
+            persist_dir=persist_dir,
+            rebuild=True,
+        )
+        _drop_cache(collection)
+        _get_vectordb(collection)
+        return BuildResponse(
+            success=True,
+            message=f"文件已上传并同步知识库: {filename}",
+            collection=collection,
+        )
+    except Exception as e:
+        logger.error("上传后重建知识库失败: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"文件已保存，但重建索引失败: {e}")
+
+
 @app.get("/api/v1/health")
 def health_check():
     """健康检查"""
@@ -211,18 +315,19 @@ def search(req: SearchRequest):
         return SearchResponse(results=[], total=0)
 
     try:
-        docs = query_knowledge_base(
+        # 使用带分数的检索：Chroma 返回的是距离，此处已换算为相似度
+        pairs = query_knowledge_base_with_scores(
             query=req.query,
             top_k=req.topK,
             vectordb=db,
             collection_name=collection,
         )
 
-        if not docs:
+        if not pairs:
             return SearchResponse(results=[], total=0)
 
         items: list[SearchResultItem] = []
-        for i, doc in enumerate(docs):
+        for i, (doc, similarity) in enumerate(pairs):
             metadata = dict(getattr(doc, "metadata", None) or {})
             source = metadata.get("source", "")
             if source and ("/" in source or "\\" in source):
@@ -235,7 +340,8 @@ def search(req: SearchRequest):
 
             items.append(SearchResultItem(
                 vectorId=str(metadata.get("vector_id", metadata.get("source", f"{collection}-{i}"))),
-                score=float(metadata.get("score", 0.0)),
+                # 真实相似度（越大越相似），供 Java 侧按阈值过滤
+                score=float(similarity),
                 content=doc.page_content,
                 metadata=metadata,
             ))
@@ -464,13 +570,24 @@ def agent_chat_stream(req: ChatRequest):
     )
 
 
-# ── 语音（TTS / ASR） ────────────────────────────────────
+# ── 语音（TTS / ASR）────────────────────────────────────
+# ⚠️ 接口契约已按附件一 §3.3 固定，但语音引擎（第三方云服务 / 自建部署）
+#    尚未决策，因此暂不接入实际实现，返回 501 Not Implemented。
 
 @app.get("/api/v1/speakers")
 def list_speakers():
-    """可用发音人列表"""
-    from voice_service import list_voices
-    return {"speakers": list_voices()}
+    """
+    可用发音人列表
+
+    说明：发音人目录与具体引擎无关，已先行固定；
+    确定引擎后需将 id 映射为对应厂商的发音人编码。
+    """
+    from voice_service import list_voices, is_voice_enabled, VOICE_PROVIDER
+    return {
+        "speakers": list_voices(),
+        "enabled": is_voice_enabled(),
+        "provider": VOICE_PROVIDER,
+    }
 
 
 @app.post("/api/v1/tts")
@@ -480,15 +597,26 @@ def text_to_speech(payload: dict):
 
     请求体: {"text": "...", "speaker": "zh-CN-XiaoxiaoNeural"}
     返回: audio/mpeg 二进制
+
+    当前状态：已接入。默认 edge-tts（无需密钥）；
+    配置 ALIYUN_ACCESS_KEY_ID/SECRET 后优先走阿里云 NLS。
     """
     text = (payload or {}).get("text", "")
     if not text or not text.strip():
         raise HTTPException(status_code=400, detail="text不能为空")
 
     speaker = (payload or {}).get("speaker") or None
+
+    from voice_service import synthesize, VoiceNotImplementedError
+
     try:
-        from voice_service import synthesize
         audio = synthesize(text.strip(), voice=speaker)
+    except VoiceNotImplementedError as e:
+        # 501：接口存在但尚未实现，区别于 500 服务异常
+        logger.warning("TTS 未启用: %s", e)
+        raise HTTPException(status_code=501, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error("TTS 合成失败: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"TTS失败: {e}")
@@ -503,10 +631,12 @@ def text_to_speech(payload: dict):
 @app.post("/api/v1/asr")
 async def speech_to_text(file: UploadFile = File(...)):
     """
-    语音识别
+    语音识别（接口已定义，实现待定）
 
     表单: file=<音频文件> (wav/mp3/m4a 等)
     返回: {"text": "识别结果"}
+
+    当前状态：语音方案未确定，返回 501。
     """
     try:
         data = await file.read()
@@ -516,9 +646,15 @@ async def speech_to_text(file: UploadFile = File(...)):
     if not data:
         raise HTTPException(status_code=400, detail="音频文件为空")
 
+    from voice_service import transcribe, VoiceNotImplementedError
+
     try:
-        from voice_service import transcribe
         text = transcribe(data, filename=file.filename or "audio.wav")
+    except VoiceNotImplementedError as e:
+        logger.warning("ASR 未启用: %s", e)
+        raise HTTPException(status_code=501, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error("ASR 识别失败: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"ASR失败: {e}")

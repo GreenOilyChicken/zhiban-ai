@@ -1,18 +1,30 @@
 """
-voice_service — 语音合成（TTS）与语音识别（ASR）
+voice_service — 语音能力（TTS / ASR）
 
-设计目标（附件一 §3.3 / §10.1）：
-  - TTS：文本转语音，返回 MP3 音频，支持多种发音人
-  - ASR：语音转文字，支持多种音频格式
-  - 发音人可切换
+当前状态
+------------------------------------------------------------------
+TTS  ✅ 已接入：默认走 edge-tts（无需密钥），配置阿里云 NLS 密钥后优先走云端。
+ASR  ⚠️ 待实现：接口契约已固定，但引擎未接入，`_transcribe_impl` 抛
+     VoiceNotImplementedError，由 HTTP 层转 501 Not Implemented。
 
-实现策略（可插拔）：
-  1. 首选云端（阿里云 NLS）—— 需配置 ALIYUN_ACCESS_KEY_ID 等
-  2. 回退本地/免费通道：
-     - TTS: edge-tts（微软在线语音，无需密钥）
-     - ASR: faster-whisper / openai-whisper 本地模型；不可用时返回明确错误
+两者相互独立：TTS 已可用不影响 ASR 仍为 501。
 
-所有外部依赖均为惰性导入，缺失时给出可操作的错误信息，不影响 RAG 主流程。
+ASR 候选方案（供决策参考）
+------------------------------------------------------------------
+  A. 第三方云服务：阿里云 NLS、腾讯云 ASR、讯飞
+     - 优点：准确率高、支持实时流式
+     - 缺点：按量计费、依赖公网
+  B. 自建部署：FunASR、Whisper / faster-whisper
+     - 优点：可控、离线可用
+     - 缺点：需算力，长音频延迟较高
+
+待决策后，只需在本文件内实现 `_transcribe_impl` 函数，接口与调用方无需改动。
+
+统一约定
+------------------------------------------------------------------
+- 发音人目录（VOICE_CATALOG）与切换逻辑已实现，与具体引擎无关
+- 未实现的能力抛 VoiceNotImplementedError，由 HTTP 层转 501 Not Implemented，
+  错误信息中说明「待确认语音方案」，便于前端友好提示
 """
 from __future__ import annotations
 
@@ -20,17 +32,31 @@ import asyncio
 import io
 import logging
 import os
-import tempfile
-from pathlib import Path
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# ── 发音人配置 ────────────────────────────────────────────
+# 语音引擎标识：none = 未接入（默认）；后续可设为 aliyun / tencent / selfhosted
+VOICE_PROVIDER = os.getenv("VOICE_PROVIDER", "edge").lower()
 
-# 默认发音人：龙小淳风格（甜美年轻女声，贴近"小芯"童声人设）
+
+class VoiceNotImplementedError(RuntimeError):
+    """语音能力尚未接入具体实现"""
+
+    def __init__(self, capability: str):
+        self.capability = capability
+        super().__init__(
+            f"{capability} 功能尚未启用：语音方案（第三方云服务 / 自建部署）待确认。"
+            f"当前 VOICE_PROVIDER={VOICE_PROVIDER}"
+        )
+
+
+# ── 发音人目录（与引擎无关，可先行固定）──────────────────
+
+# 默认发音人：甜美年轻女声，贴近"小芯"人设
 DEFAULT_VOICE = os.getenv("TTS_VOICE", "zh-CN-XiaoxiaoNeural")
 
+# 说明：此处 id 采用通用命名。确定引擎后需映射为对应厂商的发音人编码。
 VOICE_CATALOG = [
     {"id": "zh-CN-XiaoxiaoNeural", "name": "晓晓（女声·甜美）", "gender": "female", "default": True},
     {"id": "zh-CN-XiaoyiNeural", "name": "晓伊（女声·活泼）", "gender": "female"},
@@ -42,6 +68,11 @@ VOICE_CATALOG = [
 ]
 
 _current_voice = DEFAULT_VOICE
+
+
+def is_voice_enabled() -> bool:
+    """语音能力是否已接入实际实现"""
+    return VOICE_PROVIDER != "none"
 
 
 def list_voices() -> list[dict]:
@@ -81,6 +112,10 @@ def synthesize(text: str, voice: Optional[str] = None) -> bytes:
 
     Returns:
         MP3 音频字节
+
+    Raises:
+        ValueError: 参数不合法
+        VoiceNotImplementedError: 语音引擎尚未接入
     """
     if not text or not text.strip():
         raise ValueError("text 不能为空")
@@ -90,8 +125,21 @@ def synthesize(text: str, voice: Optional[str] = None) -> bytes:
         logger.warning("TTS 文本超过 500 字，已截断")
         text = text[:500]
 
-    voice = voice or _current_voice
+    return _synthesize_impl(text, voice or _current_voice)
 
+
+def _synthesize_impl(text: str, voice: str) -> bytes:
+    """
+    TTS 实际实现入口。
+
+    实现策略（可插拔）：
+      1) 阿里云 NLS —— 配置了 ALIYUN_ACCESS_KEY_ID / SECRET 时优先
+      2) edge-tts   —— 默认通道，无需密钥
+
+    说明：ASR 与 TTS 相互独立。本函数实现后 TTS 可用，
+    但 ASR（_transcribe_impl）仍保持「待实现」并返回 501，
+    不影响 §3.3 中两者各自的语义。
+    """
     # 1) 阿里云 NLS（若已配置）
     if _aliyun_configured():
         try:
@@ -99,7 +147,7 @@ def synthesize(text: str, voice: Optional[str] = None) -> bytes:
         except Exception as e:
             logger.warning("阿里云 TTS 失败，回退 edge-tts: %s", e)
 
-    # 2) edge-tts（默认）
+    # 2) edge-tts（默认，无需密钥）
     return _edge_tts(text, voice)
 
 
@@ -181,96 +229,27 @@ def transcribe(data: bytes, filename: str = "audio.wav") -> str:
 
     Returns:
         识别文本
+
+    Raises:
+        ValueError: 参数不合法
+        VoiceNotImplementedError: 语音引擎尚未接入
     """
     if not data:
         raise ValueError("音频数据为空")
 
-    # 1) 阿里云 NLS（若配置了 token）
-    if os.getenv("ALIYUN_NLS_TOKEN") and os.getenv("ALIYUN_NLS_APP_KEY"):
-        try:
+    return _transcribe_impl(data, filename)
+
+
+def _transcribe_impl(data: bytes, filename: str) -> str:
+    """
+    ASR 实际实现入口 —— 待语音方案确定后在此接入。
+
+    可参考的实现骨架：
+
+        if VOICE_PROVIDER == "aliyun":
             return _aliyun_asr(data, filename)
-        except Exception as e:
-            logger.warning("阿里云 ASR 失败，回退本地模型: %s", e)
-
-    # 2) 本地 whisper
-    return _local_asr(data, filename)
-
-
-def _aliyun_asr(data: bytes, filename: str) -> str:
-    """阿里云一句话识别（惰性导入）"""
-    import requests  # type: ignore
-
-    app_key = os.getenv("ALIYUN_NLS_APP_KEY", "")
-    token = os.getenv("ALIYUN_NLS_TOKEN", "")
-    url = (
-        "https://nls-gateway-cn-shanghai.aliyuncs.com/stream/v1/asr"
-        f"?appkey={app_key}&format=pcm&sample_rate=16000&enable_punctuation_prediction=true"
-    )
-    headers = {
-        "X-NLS-Token": token,
-        "Content-Type": "application/octet-stream",
-    }
-    resp = requests.post(url, headers=headers, data=data, timeout=30)
-    resp.raise_for_status()
-    result = resp.json()
-    if result.get("status") != 20000000:
-        raise RuntimeError(f"阿里云 ASR 失败: {result.get('message')}")
-    return result.get("result", "")
-
-
-def _local_asr(data: bytes, filename: str) -> str:
-    """本地 whisper 识别（faster-whisper 优先，回退 openai-whisper）"""
-    suffix = Path(filename).suffix or ".wav"
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-        tmp.write(data)
-        tmp_path = tmp.name
-
-    try:
-        # faster-whisper
-        try:
-            from faster_whisper import WhisperModel  # type: ignore
-        except ImportError:
-            WhisperModel = None  # type: ignore
-
-        if WhisperModel is not None:
-            model_size = os.getenv("ASR_MODEL", "small")
-            device = os.getenv("ASR_DEVICE", "cpu")
-            compute = os.getenv("ASR_COMPUTE_TYPE", "int8")
-            model = _get_whisper_model(model_size, device, compute)
-            segments, _info = model.transcribe(tmp_path, language="zh", beam_size=5)
-            text = "".join(seg.text for seg in segments).strip()
-            logger.info("ASR(faster-whisper) 识别完成: %d 字", len(text))
-            return text
-
-        # openai-whisper
-        try:
-            import whisper  # type: ignore
-        except ImportError as e:
-            raise RuntimeError(
-                "ASR 依赖缺失：请安装 faster-whisper（pip install faster-whisper），"
-                "或配置阿里云 NLS 的 ALIYUN_NLS_TOKEN"
-            ) from e
-
-        model = whisper.load_model(os.getenv("ASR_MODEL", "small"))
-        result = model.transcribe(tmp_path, language="zh")
-        text = (result.get("text") or "").strip()
-        logger.info("ASR(whisper) 识别完成: %d 字", len(text))
-        return text
-    finally:
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
-
-
-_whisper_models: dict = {}
-
-
-def _get_whisper_model(model_size: str, device: str, compute_type: str):
-    """缓存 whisper 模型实例，避免重复加载"""
-    key = (model_size, device, compute_type)
-    if key not in _whisper_models:
-        from faster_whisper import WhisperModel  # type: ignore
-        logger.info("加载 ASR 模型: %s (%s/%s)", model_size, device, compute_type)
-        _whisper_models[key] = WhisperModel(model_size, device=device, compute_type=compute_type)
-    return _whisper_models[key]
+        if VOICE_PROVIDER == "selfhosted":
+            return _selfhosted_asr(data, filename)
+        raise VoiceNotImplementedError("ASR")
+    """
+    raise VoiceNotImplementedError("ASR")

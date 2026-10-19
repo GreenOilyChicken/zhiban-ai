@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════
+# 知伴AI — 宝塔环境适配叠加配置（docker-compose.bt.yml）
+# ═══════════════════════════════════════════════════════
+#
+# 【设计原则】
+#   内部服务（MySQL/Java/Python）只在 Docker 内部网络用服务名通信，
+#   不映射任何宿主端口 → 数据库不对外暴露，更安全。
+#   只有前端需要暴露给宝塔 nginx 反代。
+#
+# 【端口策略】
+#   mysql         : 不映射（容器间用 mysql:3306）
+#   python-ai     : 不映射（容器间用 python-ai:8081，docker exec 进容器管理）
+#   java-backend  : 不映射（容器间用 java-backend:8080）
+#   vue-frontend  : 8088→80（宝塔 nginx 反代 80→8088）
+#
+# 【启动方式】
+#   cd /home/www/code/zhiban-ai/zhiban-ai
+#   docker compose --env-file .env.docker \
+#     -f docker-compose.yml -f docker-compose.bt.yml up -d --build
+#
+# 【宿主机访问点】
+#   唯一入口：http://127.0.0.1:8088 ← 宝塔 nginx 反代到这里
+#   其余服务全部封闭在容器网络内，外部不可达
+# ═══════════════════════════════════════════════════════
+
+services:
+  # ── MySQL：不对外暴露，只在容器网络内用 mysql:3306 ──
+  mysql:
+    ports: !reset []
+
+  # ── Python AI：不对外暴露 ─────────────────────────
+  # 容器间用 python-ai:8081；知识库构建用 docker exec 进容器跑
+  python-ai:
+    ports: !reset []
+
+  # ── Java 后端：不对外暴露 ─────────────────────────
+  # 容器间用 java-backend:8080；前端 nginx 反代 /api/ 到它
+  java-backend:
+    ports: !reset []
+
+  # ── 前端：唯一对外暴露的端口 ─────────────────────
+  # !override 强制替换主 compose 的 80→80，改为 8088→80
+  # 宝塔 nginx 反代 80→8088（或直接 8088 访问）
+  vue-frontend:
+    ports: !override
+      - "8088:80"

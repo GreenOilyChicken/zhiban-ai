@@ -114,9 +114,13 @@ export function switchSpeaker(speaker) {
   return request.post('/voice/speakers', null, { params: { speaker } })
 }
 
-// TTS 音频地址（直接用于 audio.src，需带 token 时由调用方处理）
+// TTS 音频地址（直接用于 audio.src）
+// 注意：audio.src / EventSource 无法设置 Authorization 请求头，
+// 因此这里通过查询参数携带 JWT（后端 JwtAuthenticationFilter 已支持）。
 export function ttsUrl(text, speaker) {
   const params = new URLSearchParams({ text })
   if (speaker) params.append('speaker', speaker)
+  const token = getToken()
+  if (token) params.append('token', token)
   return `/api/voice/tts?${params.toString()}`
 }

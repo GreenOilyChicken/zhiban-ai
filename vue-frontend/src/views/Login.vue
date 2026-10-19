@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-box">
       <div class="login-header">
-        <el-icon size="40" color="#409EFF"><ChatDotRound /></el-icon>
+        <el-icon size="40" color="var(--zb-accent)"><ChatDotRound /></el-icon>
         <h1>知伴AI</h1>
         <p>双端智能体平台 · 管理后台</p>
       </div>
@@ -342,51 +342,59 @@ async function handleGuestLogin() {
 </script>
 
 <style scoped>
+/* 去紫蓝 AI 渐变：改沉静墨青底 + 右上柔光，配玻璃质感卡片 */
 .login-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: var(--zb-space-6);
+  background:
+    radial-gradient(720px 480px at 100% 0%, rgba(43, 106, 119, 0.14), transparent 60%),
+    radial-gradient(560px 380px at 0% 100%, rgba(43, 106, 119, 0.08), transparent 55%),
+    var(--zb-bg);
 }
 
 .login-box {
   width: 420px;
-  max-width: 90vw;
-  background: #fff;
-  border-radius: 16px;
-  padding: 40px 36px 28px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  max-width: 100%;
+  background: var(--zb-surface);
+  border: 1px solid var(--zb-border);
+  border-radius: var(--zb-radius-lg);
+  padding: var(--zb-space-10) var(--zb-space-8) var(--zb-space-6);
+  box-shadow: var(--zb-shadow-lg);
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: var(--zb-space-8);
 }
 
 .login-header h1 {
-  font-size: 28px;
-  margin: 12px 0 4px;
-  color: #303133;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: var(--zb-space-3) 0 var(--zb-space-1);
+  color: var(--zb-text);
 }
 
 .login-header p {
   font-size: 14px;
-  color: #909399;
+  color: var(--zb-text-3);
 }
 
 .login-tabs {
-  margin-bottom: 12px;
+  margin-bottom: var(--zb-space-3);
 }
 
 .submit-btn {
   width: 100%;
-  margin-top: 8px;
+  margin-top: var(--zb-space-2);
 }
 
 .code-row {
   display: flex;
-  gap: 8px;
+  gap: var(--zb-space-2);
   width: 100%;
 }
 
@@ -396,11 +404,11 @@ async function handleGuestLogin() {
 
 .guest-btn {
   width: 100%;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .back-home {
   width: 100%;
-  margin-top: 8px;
+  margin-top: var(--zb-space-2);
 }
 </style>

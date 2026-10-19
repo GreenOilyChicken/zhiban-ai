@@ -4,6 +4,7 @@ import com.zhiban.ai.security.JwtAuthenticationFilter;
 import com.zhiban.ai.security.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -98,7 +99,12 @@ public class SecurityConfig {
                 .requestMatchers("/help/gov-policy", "/help/gov-policy/**").permitAll()
                 .requestMatchers("/help/categories").permitAll()
                 .requestMatchers("/help/faq").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
+                // 附件一 §3.5 规范路径：/articles、/policies 为公开只读接口
+                .requestMatchers(HttpMethod.GET, "/articles", "/articles/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/policies", "/policies/**").permitAll()
+                // 健康检查（公开）。注意：项目未引入 actuator，
+                // 故放行的是 HealthController 提供的 /health，而非 /actuator/health。
+                .requestMatchers("/health").permitAll()
                 .requestMatchers("/error").permitAll()
                 // WebSocket 握手由 ChatWebSocketHandler 自行处理鉴权
                 .requestMatchers("/ws/**").permitAll()

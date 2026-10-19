@@ -1,0 +1,35 @@
+# ============================================================
+# 知伴AI 服务统一环境变量配置
+# 改参数只改这个文件，然后执行: zhibanctl.sh restart <服务名>
+# ============================================================
+
+# ── MySQL 数据库（项目自管实例，端口 3390）─────────────
+DB_HOST=127.0.0.1
+DB_PORT=3390
+DB_NAME=zhiban_ai
+DB_USERNAME=zhiban
+DB_PASSWORD=zhiban_dev_2026
+
+# ── JWT 认证密钥 ────────────────────────────────────────
+JWT_SECRET=zhiban-prod-jwt-secret-key-at-least-32-characters-long-2026
+
+# ── 敏感数据加密（手机号 AES-256-GCM）──────────────────
+PHONE_ENC_KEY=zhiban-phone-encryption-key-32bytes!
+PHONE_INDEX_KEY=zhiban-phone-blind-index-key-32byt
+
+# ── Python AI 服务地址（Java 调它）─────────────────────
+AI_SERVICE_URL=http://127.0.0.1:8081
+
+# ── Python AI 服务自身配置 ──────────────────────────────
+RAG_HOST=127.0.0.1
+RAG_PORT=8081
+LLM_PROVIDER=codebuddy
+# 如改用 DeepSeek 官方 API，取消下面注释并填真实 key：
+#DEEPSEEK_API_KEY=sk-你的真实key
+#DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+#DEEPSEEK_MODEL=deepseek-chat
+EMBEDDING_DEVICE=cpu
+BGE_MODEL_NAME=BAAI/bge-small-zh-v1.5
+
+# ── 前端 nginx（自管，不碰宝塔 80 端口）────────────────
+FRONTEND_PORT=8088

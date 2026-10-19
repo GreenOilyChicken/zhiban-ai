@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════
+# 知伴AI — HTTPS / TLS 可选覆盖配置（docker-compose 叠加文件）
+# ═══════════════════════════════════════════════════════
+#
+# 【设计原则：默认可用、生产可切】
+#   - docker-compose.yml 保持原样：仅 80:80 + nginx.conf（HTTP-only）。
+#     `docker compose up -d` 在没有证书时照常启动，不会因缺证书崩溃。
+#   - 本文件是【可选叠加层】，只有显式 -f 引入时才启用 443/TLS。
+#
+# 启用（满足附件一 §9.2 开放 443、§10.3 传输使用 HTTPS）：
+#   1) 准备证书：bash scripts/gen-self-signed-cert.sh -d your-domain.com
+#      或放置 Let's Encrypt 的 fullchain.pem/privkey.pem 为
+#      certs/server.crt 与 certs/server.key
+#   2) 启动：
+#      docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+#
+# 关闭并回到 HTTP-only：
+#   docker compose -f docker-compose.yml -f docker-compose.https.yml down
+#   docker compose up -d
+#
+# ⚠️ 缺少 certs/server.crt 或 certs/server.key 时，本叠加层会让容器启动失败
+#    （Nginx 报 cannot load certificate）。这是刻意设计：显式选择 HTTPS 就必须
+#    提供证书；默认路径不引入该叠加层，因此不受影响。
+# ═══════════════════════════════════════════════════════
+
+services:
+  vue-frontend:
+    ports:
+      # 80：保留（用于 80→443 跳转，以及 ACME HTTP-01 校验）
+      - "80:80"
+      # 443：TLS（附件一 §9.2 / §10.3）
+      - "443:443"
+    volumes:
+      # 用 HTTPS 版 server 块替换镜像内默认的 nginx.conf（HTTP-only）
+      - ./vue-frontend/nginx.https.conf:/etc/nginx/conf.d/default.conf:ro
+      # 证书目录（只读）。约定：server.crt + server.key
+      - ./certs:/etc/nginx/certs:ro
+    healthcheck:
+      # HTTPS 模式下，80 端口的 / 会 301 跳到 https，而 busybox wget 无法
+      # 校验自签名证书 → 健康检查会误报失败。因此改探 /healthz：
+      # 该端点由 nginx.https.conf 在 80 与 443 上直接返回 200，不做跳转。
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

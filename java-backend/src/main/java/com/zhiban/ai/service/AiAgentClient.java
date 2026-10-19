@@ -61,6 +61,27 @@ public interface AiAgentClient {
     boolean isHealthy();
 
     /**
+     * 重建/同步知识库向量索引（附件一 §4.2 政策管理「知识库同步」）
+     *
+     * @param collection 集合名（govpolicy / elderly / tourism）
+     * @param rebuild    true=清库全量重建，false=增量更新
+     * @return AI 服务返回的消息
+     */
+    String rebuildKnowledgeBase(String collection, boolean rebuild);
+
+    /**
+     * 上传知识库文档并同步索引（附件一 §4.2 政策管理「文档上传」）
+     *
+     * @param content    文件字节
+     * @param filename   原始文件名
+     * @param collection 目标集合
+     * @param rebuild    是否上传后立即重建索引
+     * @return AI 服务返回的消息
+     */
+    String uploadKnowledgeBaseDocument(byte[] content, String filename,
+                                       String collection, boolean rebuild);
+
+    /**
      * 对话历史条目
      */
     record HistoryItem(String role, String content) {

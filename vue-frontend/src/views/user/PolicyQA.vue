@@ -94,6 +94,7 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { askPolicy, getQuota } from '@/api/help'
+import { getToken } from '@/api/index'
 import QuotaBar from '@/components/QuotaBar.vue'
 
 const question = ref('')
@@ -110,7 +111,11 @@ const quickQuestions = [
 ]
 
 onMounted(async () => {
-  await loadQuota()
+  // 配额接口需登录(/help/quota 走 anyRequest().authenticated())。
+  // 游客进入问答页时不调用，避免触发 403「无权限访问」。
+  if (getToken()) {
+    await loadQuota()
+  }
 })
 
 async function loadQuota() {

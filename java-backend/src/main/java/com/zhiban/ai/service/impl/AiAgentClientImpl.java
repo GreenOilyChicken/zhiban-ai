@@ -183,6 +183,60 @@ public class AiAgentClientImpl implements AiAgentClient {
         }
     }
 
+    @Override
+    public String rebuildKnowledgeBase(String collection, boolean rebuild) {
+        String url = config.getBaseUrl() + config.getBuildPath();
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("collection", collection);
+        body.put("rebuild", rebuild);
+
+        try {
+            ResponseEntity<String> resp = restTemplate.postForEntity(
+                    url, new HttpEntity<>(body, jsonHeaders()), String.class);
+            JsonNode root = objectMapper.readTree(resp.getBody());
+            JsonNode message = root.get("message");
+            log.info("知识库同步完成: collection={}, rebuild={}, message={}",
+                    collection, rebuild, message == null ? "" : message.asText());
+            return message == null ? "知识库同步完成" : message.asText();
+        } catch (Exception e) {
+            log.error("知识库同步失败: collection={}, err={}", collection, e.getMessage());
+            throw new BusinessException(502, "知识库同步失败：AI 服务不可用或构建出错");
+        }
+    }
+
+    @Override
+    public String uploadKnowledgeBaseDocument(byte[] content, String filename,
+                                              String collection, boolean rebuild) {
+        String url = config.getBaseUrl() + config.getKbUploadPath();
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            if (config.getApiKey() != null && !config.getApiKey().isBlank()) {
+                headers.set("X-API-Key", config.getApiKey());
+            }
+
+            MultiValueMap<String, Object> form = new LinkedMultiValueMap<>();
+            form.add("file", new ByteArrayResource(content) {
+                @Override
+                public String getFilename() {
+                    return filename == null || filename.isBlank() ? "document.txt" : filename;
+                }
+            });
+            form.add("collection", collection == null ? "govpolicy" : collection);
+            form.add("rebuild", String.valueOf(rebuild));
+
+            ResponseEntity<String> resp = restTemplate.postForEntity(
+                    url, new HttpEntity<>(form, headers), String.class);
+            JsonNode root = objectMapper.readTree(resp.getBody());
+            JsonNode message = root.get("message");
+            log.info("知识库文档上传完成: file={}, collection={}", filename, collection);
+            return message == null ? "文档已上传并同步" : message.asText();
+        } catch (Exception e) {
+            log.error("上传知识库文档失败: file={}, err={}", filename, e.getMessage());
+            throw new BusinessException(502, "文档上传失败：AI 服务不可用或文件不被接受");
+        }
+    }
+
     // ── 内部工具 ─────────────────────────────────────────
 
     private HttpHeaders jsonHeaders() {

@@ -31,8 +31,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -110,6 +113,68 @@ public class HelpCenterServiceImpl implements HelpCenterService {
         // 非管理员只能查看已发布的文章
         // 注意：此处不做角色判断，由Controller的公开/保护路由决定可见性
         return convertToHelpArticleVO(content);
+    }
+
+    /**
+     * 获取相关推荐文章（附件一 §4.1 文章详情「相关推荐」）
+     *
+     * 策略：优先取同分类的其他已发布文章；不足 limit 时，
+     * 用最新的其他已发布文章补齐，并去重。
+     */
+    @Override
+    public List<HelpArticleVO> getRelatedArticles(Long id, int limit) {
+        if (id == null || id <= 0) {
+            throw new BusinessException(400, "文章ID无效");
+        }
+        HelpContent current = helpContentMapper.selectById(id);
+        if (current == null || current.getDeleted() == 1) {
+            throw new BusinessException(404, "文章不存在");
+        }
+        int size = limit <= 0 ? 5 : limit;
+
+        List<HelpContent> related = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
+        seen.add(id);
+
+        // 1. 同分类优先
+        String category = current.getCategory();
+        if (StringUtils.hasText(category)) {
+            LambdaQueryWrapper<HelpContent> sameCategory = new LambdaQueryWrapper<>();
+            sameCategory.eq(HelpContent::getDeleted, 0)
+                        .eq(HelpContent::getIsPublished, 1)
+                        .eq(HelpContent::getCategory, category)
+                        .ne(HelpContent::getId, id)
+                        .orderByDesc(HelpContent::getCreateTime)
+                        .last("LIMIT " + size);
+            for (HelpContent c : helpContentMapper.selectList(sameCategory)) {
+                if (seen.add(c.getId())) {
+                    related.add(c);
+                }
+            }
+        }
+
+        // 2. 不足则用最新文章补齐
+        if (related.size() < size) {
+            LambdaQueryWrapper<HelpContent> latest = new LambdaQueryWrapper<>();
+            latest.eq(HelpContent::getDeleted, 0)
+                  .eq(HelpContent::getIsPublished, 1)
+                  .ne(HelpContent::getId, id)
+                  .orderByDesc(HelpContent::getCreateTime)
+                  .last("LIMIT " + (size * 2));
+            for (HelpContent c : helpContentMapper.selectList(latest)) {
+                if (related.size() >= size) {
+                    break;
+                }
+                if (seen.add(c.getId())) {
+                    related.add(c);
+                }
+            }
+        }
+
+        return related.stream()
+                .limit(size)
+                .map(this::convertToHelpArticleVO)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -327,6 +392,82 @@ public class HelpCenterServiceImpl implements HelpCenterService {
         return true;
     }
 
+    /**
+     * 查询配额列表（管理端，附件一 §4.2 配额管理）
+     */
+    @Override
+    public List<QuotaVO> listQuotas(Long userId, String quotaType) {
+        LambdaQueryWrapper<UserQuota> wrapper = new LambdaQueryWrapper<>();
+        if (userId != null) {
+            wrapper.eq(UserQuota::getUserId, userId);
+        }
+        if (StringUtils.hasText(quotaType)) {
+            wrapper.eq(UserQuota::getQuotaType, quotaType);
+        }
+        wrapper.orderByAsc(UserQuota::getUserId).orderByAsc(UserQuota::getQuotaType);
+        return userQuotaMapper.selectList(wrapper).stream()
+                .map(this::convertToQuotaVO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 调整用户配额（管理端，附件一 §4.2 配额管理「查看与调整」）
+     *
+     * 规则：
+     *  - 记录不存在时按给定值初始化（默认总量 100 / 免费 10）
+     *  - totalAmount / usedAmount / freeAmount 为 null 表示保持原值
+     *  - 校验非负，且 usedAmount 不得超过 totalAmount
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public QuotaVO adjustQuota(Long userId, String quotaType,
+                               Integer totalAmount, Integer usedAmount, Integer freeAmount) {
+        if (userId == null || userId <= 0) {
+            throw new BusinessException(400, "用户ID无效");
+        }
+        if (!StringUtils.hasText(quotaType)) {
+            throw new BusinessException(400, "配额类型不能为空");
+        }
+        if (totalAmount != null && totalAmount < 0) {
+            throw new BusinessException(400, "总配额不能为负数");
+        }
+        if (usedAmount != null && usedAmount < 0) {
+            throw new BusinessException(400, "已用配额不能为负数");
+        }
+        if (freeAmount != null && freeAmount < 0) {
+            throw new BusinessException(400, "免费配额不能为负数");
+        }
+
+        // 确保记录存在
+        userQuotaMapper.initQuotaIfAbsent(userId, quotaType, DEFAULT_TOTAL_QUOTA, DEFAULT_FREE_QUOTA);
+
+        LambdaQueryWrapper<UserQuota> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserQuota::getUserId, userId)
+               .eq(UserQuota::getQuotaType, quotaType);
+        UserQuota quota = userQuotaMapper.selectOne(wrapper);
+        if (quota == null) {
+            throw new BusinessException(500, "配额记录初始化失败");
+        }
+
+        int newTotal = totalAmount != null ? totalAmount : quota.getTotalAmount();
+        int newUsed = usedAmount != null ? usedAmount : quota.getUsedAmount();
+        if (newUsed > newTotal) {
+            throw new BusinessException(400,
+                    String.format("已用配额(%d)不能超过总配额(%d)", newUsed, newTotal));
+        }
+
+        quota.setTotalAmount(newTotal);
+        quota.setUsedAmount(newUsed);
+        if (freeAmount != null) {
+            quota.setFreeAmount(freeAmount);
+        }
+        userQuotaMapper.updateById(quota);
+
+        log.info("管理员调整配额: userId={}, quotaType={}, total={}, used={}, free={}",
+                userId, quotaType, quota.getTotalAmount(), quota.getUsedAmount(), quota.getFreeAmount());
+        return convertToQuotaVO(quota);
+    }
+
     // ==================== 分类 ====================
 
     @Override
@@ -416,16 +557,24 @@ public class HelpCenterServiceImpl implements HelpCenterService {
             quota = userQuotaMapper.selectOne(wrapper);
         }
 
+        return convertToQuotaVO(quota);
+    }
+
+    /**
+     * UserQuota -> QuotaVO
+     */
+    private QuotaVO convertToQuotaVO(UserQuota quota) {
         QuotaVO vo = new QuotaVO();
-        if (quota != null) {
-            vo.setId(quota.getId());
-            vo.setUserId(quota.getUserId());
-            vo.setQuotaType(quota.getQuotaType());
-            vo.setTotalAmount(quota.getTotalAmount());
-            vo.setUsedAmount(quota.getUsedAmount());
-            vo.setRemainingAmount(quota.getTotalAmount() - quota.getUsedAmount());
-            vo.setFreeAmount(quota.getFreeAmount());
+        if (quota == null) {
+            return vo;
         }
+        vo.setId(quota.getId());
+        vo.setUserId(quota.getUserId());
+        vo.setQuotaType(quota.getQuotaType());
+        vo.setTotalAmount(quota.getTotalAmount());
+        vo.setUsedAmount(quota.getUsedAmount());
+        vo.setRemainingAmount(quota.getTotalAmount() - quota.getUsedAmount());
+        vo.setFreeAmount(quota.getFreeAmount());
         return vo;
     }
 

@@ -33,6 +33,18 @@ vue-frontend/.vite/
 # ── Docker ───────────────────
 .env.docker
 
+# ── TLS 证书（私钥绝不提交仓库）─────
+# 仅忽略证书/私钥文件本身，certs/README.md 与 certs/.gitkeep 仍纳入版本控制
+certs/*.key
+certs/*.crt
+certs/*.pem
+certs/*.csr
+certs/*.der
+certs/*.p12
+certs/*.pfx
+certs/*.key.*
+certs/*.crt.*
+
 # ── 本地依赖目录（不提交）─────────
 python/.pylibs/
 .pip-install.log

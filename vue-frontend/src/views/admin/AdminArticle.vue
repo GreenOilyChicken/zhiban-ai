@@ -104,8 +104,8 @@ loadArticles()
 async function loadArticles() {
   loading.value = true
   try {
-    const res = await getArticles({ page: currentPage.value - 1, size: pageSize.value })
-    articles.value = res.data?.content || res.data?.records || []
+    const res = await getArticles({ page: currentPage.value, size: pageSize.value })
+    articles.value = res.data?.records || res.data?.content || []
     total.value = res.data?.totalElements || res.data?.total || 0
   } catch {
     // 错误已由拦截器处理

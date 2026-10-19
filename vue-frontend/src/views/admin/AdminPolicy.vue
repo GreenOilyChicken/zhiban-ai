@@ -146,8 +146,8 @@ loadPolicies()
 async function loadPolicies() {
   loading.value = true
   try {
-    const res = await getGovPolicies({ page: currentPage.value - 1, size: pageSize.value })
-    policies.value = res.data?.content || res.data?.records || []
+    const res = await getGovPolicies({ page: currentPage.value, size: pageSize.value })
+    policies.value = res.data?.records || res.data?.content || []
     total.value = res.data?.totalElements || res.data?.total || 0
   } catch {
     // 错误已由拦截器处理

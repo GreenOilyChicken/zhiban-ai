@@ -8,6 +8,7 @@ import com.zhiban.ai.exception.BusinessException;
 import com.zhiban.ai.mapper.UserMapper;
 import com.zhiban.ai.mapper.UserQuotaMapper;
 import com.zhiban.ai.security.JwtTokenProvider;
+import com.zhiban.ai.security.PhoneCryptoService;
 import com.zhiban.ai.security.SecurityUtils;
 import com.zhiban.ai.service.AuthService;
 import com.zhiban.ai.service.SmsCodeService;
@@ -41,19 +42,22 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final SmsCodeService smsCodeService;
     private final SecurityUtils securityUtils;
+    private final PhoneCryptoService phoneCryptoService;
 
     public AuthServiceImpl(UserMapper userMapper,
                            UserQuotaMapper userQuotaMapper,
                            JwtTokenProvider jwtTokenProvider,
                            PasswordEncoder passwordEncoder,
                            SmsCodeService smsCodeService,
-                           SecurityUtils securityUtils) {
+                           SecurityUtils securityUtils,
+                           PhoneCryptoService phoneCryptoService) {
         this.userMapper = userMapper;
         this.userQuotaMapper = userQuotaMapper;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
         this.smsCodeService = smsCodeService;
         this.securityUtils = securityUtils;
+        this.phoneCryptoService = phoneCryptoService;
     }
 
     @Override
@@ -81,14 +85,16 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (request.getPhone() != null && !request.getPhone().isBlank()
-                && userMapper.selectByPhone(request.getPhone()) != null) {
+                && userMapper.selectByPhoneHash(phoneCryptoService.blindIndex(request.getPhone())) != null) {
             throw new BusinessException(400, "手机号已被注册");
         }
 
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setPhone(request.getPhone());
+        // 附件一 §8.1：手机号加密存储 + 盲索引（用于等值查询）
+        user.setPhone(phoneCryptoService.encrypt(request.getPhone()));
+        user.setPhoneHash(phoneCryptoService.blindIndex(request.getPhone()));
         user.setRole("USER");
 
         userMapper.insert(user);
@@ -134,13 +140,15 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(401, "验证码错误或已过期");
         }
 
-        User user = userMapper.selectByPhone(request.getPhone());
+        User user = userMapper.selectByPhoneHash(phoneCryptoService.blindIndex(request.getPhone()));
         if (user == null) {
             // 首次使用该手机号：自动注册
             user = new User();
             user.setUsername("u" + request.getPhone());
             user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-            user.setPhone(request.getPhone());
+            // 附件一 §8.1：手机号加密存储 + 盲索引
+            user.setPhone(phoneCryptoService.encrypt(request.getPhone()));
+            user.setPhoneHash(phoneCryptoService.blindIndex(request.getPhone()));
             user.setRole("USER");
             userMapper.insert(user);
             initDefaultQuota(user.getId());
@@ -188,7 +196,8 @@ public class AuthServiceImpl implements AuthService {
         UserInfoVO vo = new UserInfoVO();
         vo.setUserId(user.getId());
         vo.setUsername(user.getUsername());
-        vo.setPhone(maskPhone(user.getPhone()));
+        // 附件一 §8.1：先解密再脱敏返回，数据库中不落明文
+        vo.setPhone(maskPhone(phoneCryptoService.decrypt(user.getPhone())));
         vo.setRole(user.getRole());
         vo.setAvatar(user.getAvatar());
         vo.setGuest(user.getUsername() != null && user.getUsername().startsWith(GUEST_PREFIX));

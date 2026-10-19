@@ -16,6 +16,14 @@ spring:
     time-zone: Asia/Shanghai
     default-property-inclusion: non_null
 
+  # 文件上传大小限制
+  # 附件一 §3.3 语音识别需支持 10MB 音频；§4.2 知识库文档上传上限 5MB。
+  # Spring 默认仅 1MB，若不显式配置，超限会抛 MaxUploadSizeExceededException 并返回 500。
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
@@ -31,6 +39,13 @@ mybatis-plus:
 jwt:
   secret: ${JWT_SECRET}  # 生产环境必须注入，不提供默认值
   expiration: 86400000   # 24小时（毫秒）
+
+# 敏感数据加密（附件一 §8.1：手机号须加密存储）
+# 未注入时退化为明文存储并打印告警，保证开发环境可用；生产环境必须注入。
+security:
+  phone:
+    encryption-key: ${PHONE_ENC_KEY:}
+    blind-index-key: ${PHONE_INDEX_KEY:}
 
 # RAG 配置
 rag:
